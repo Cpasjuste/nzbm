@@ -1,0 +1,5 @@
+14.0
+====
+- updated nzbget to version 14.0
+- updated openssl
+- add native support for armeabi, armeabi-v7a, x86, mips, arm64-v8a, x86_64 architectures
