@@ -17,6 +17,7 @@ public class Config
 	private File file;
 	private String string = null;
 	
+	private int versionCode = 0;
 	private String mainDir = Paths.nzbget;
 	private String downloadDir = Paths.nzbget;
 	private String webDir = "";
@@ -25,6 +26,7 @@ public class Config
 	private String controlPassword = "nzbget";
 	private String controlPort = "6789";
 	private String outputMode = "loggable";
+	private String logFile = mainDir + "/nzbget.log";
 	
 	public Config( String pPath )
 	{
@@ -38,6 +40,12 @@ public class Config
 		parse();
 	}
 
+	public int getVersionCode()
+	{
+		
+		return this.versionCode;
+	}
+	
 	public String getControlUsername()
 	{
 		return this.controlUsername;
@@ -118,16 +126,31 @@ public class Config
 		this.outputMode = mode;
 	}
 	
-	public void save()
+	public String getLogFile()
 	{
-		try
+		return this.unrarCmd;
+	}
+	public void setLogFile( String path )
+	{
+		this.string = this.string.replace( "LogFile="+this.logFile, "LogFile="+path );
+		this.logFile = path;
+	}
+	
+	private void load()
+	{
+		try 
 		{
-			 FileWriter writer = new FileWriter( file );
-			 BufferedWriter out = new BufferedWriter( writer );
-			 out.write( this.string );
-			 out.close();
+			FileInputStream inputStream = new FileInputStream( file );
+			FileChannel fc = inputStream.getChannel();
+			MappedByteBuffer buffer = fc.map( FileChannel.MapMode.READ_ONLY, 0, fc.size() );
+			string = Charset.defaultCharset().decode( buffer ).toString();
+			inputStream.close();
 		} 
-		catch (java.io.IOException e) {}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			Utility.log( e.toString() );
+		}
 	}
 	
 	private void parse()
@@ -136,6 +159,18 @@ public class Config
 		
 		if( string != null )
 		{
+			try
+			{
+				start = string.indexOf( "VersionCode=" ) + "VersionCode=".length();
+				end = string.indexOf( '\n', start );
+				versionCode = Integer.parseInt( string.substring( start, end ) );
+			}
+			catch( Exception e )
+			{
+				versionCode = 0;
+				Utility.loge("VersionCode not found !");
+			}
+			
 			start = string.indexOf( "ControlPort=" ) + "ControlPort=".length();
 			end = string.indexOf( '\n', start );
 			controlPort = string.substring( start, end );
@@ -168,15 +203,22 @@ public class Config
 			end = string.indexOf( '\n', start );
 			outputMode = string.substring( start, end );
 			
+			start = string.indexOf( "LogFile=" ) + "LogFile=".length();
+			end = string.indexOf( '\n', start );
+			logFile = string.substring( start, end );
+			
 			//initialize mainDir to "sdcard/nzbget" if none is set
-			if( mainDir.equals( "~/downloads" ) )
+			if( mainDir.equals( "~/downloads" )
+					|| !new File( Paths.nzbget ).exists() )
 			{
 				Utility.log( "mainDir not set, setting to default" );
+				new File( Paths.nzbget ).mkdirs();
 				this.setMainDir( Paths.nzbget );
 				this.setDownloadDir( Paths.download );
 				this.setWebDir( Paths.webui );
 				this.setunrarCmd( Paths.unrar+"/unrar" );
 				this.setOutputmode( "loggable" );
+				this.setLogFile( Paths.nzbget + "/nzbget.log" );
 				this.save();
 			}
 			
@@ -186,24 +228,31 @@ public class Config
 				this.save();
 			}
 			
-			Utility.log( "MainDir="+mainDir );	
+			Utility.log( "MainDir="+mainDir );
 		}
 	}
 	
-	private void load()
+	public void save()
 	{
-		try 
+		try
 		{
-			FileInputStream inputStream = new FileInputStream( file );
-			FileChannel fc = inputStream.getChannel();
-			MappedByteBuffer buffer = fc.map( FileChannel.MapMode.READ_ONLY, 0, fc.size() );
-			string = Charset.defaultCharset().decode( buffer ).toString();
-			inputStream.close();
+			 FileWriter writer = new FileWriter( file );
+			 BufferedWriter out = new BufferedWriter( writer );
+			 out.write( this.string );
+			 out.close();
 		} 
-		catch (IOException e)
+		catch (java.io.IOException e) {}
+	}
+	
+	public void close()
+	{
+		try
 		{
-			e.printStackTrace();
-			Utility.log( e.toString() );
-		}
+			 FileWriter writer = new FileWriter( file );
+			 BufferedWriter out = new BufferedWriter( writer );
+			 out.write( this.string );
+			 out.close();
+		} 
+		catch (java.io.IOException e) {}
 	}
 }

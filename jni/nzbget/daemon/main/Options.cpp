@@ -2566,7 +2566,12 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		// it's predefined option, OK
 		return true;
 	}
-
+#ifdef ANDROID
+	if (!strncasecmp(optname, "versioncode", 11))
+	{
+		return true;
+	}
+#endif
 	if (!strncasecmp(optname, "server", 6))
 	{
 		char* p = (char*)optname + 6;

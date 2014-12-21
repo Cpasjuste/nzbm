@@ -20,12 +20,13 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Configuration;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 
 import com.google.android.gms.ads.*;
+
 
 public class MainActivity extends NZBMServiceActivity 
 {
@@ -39,7 +40,7 @@ public class MainActivity extends NZBMServiceActivity
 	private int launchCount;
 	private int launchCountTrigger = 10;
 	private boolean showAdds = true;
-
+	
 	@Override
     public void onCreate( Bundle savedInstanceState )
     {
@@ -50,17 +51,32 @@ public class MainActivity extends NZBMServiceActivity
 		dialog = new UtilityMessage( MainActivity.this );
 		Paths.unrar = this.getFilesDir().getAbsolutePath();
         if( new File( Paths.webui ).exists() 
-        		&& new File( Paths.unrar ).exists() )
+        		&& new File( Paths.unrar ).exists()
+        		&& new File ( Paths.config ).exists() )
         {
         	conf = new Config( Paths.config );
-        	startService();
+        	// ensure data (webui,config..) is in sync with package data
+        	int pkgVersion = 0;
+        	try 
+        	{
+				pkgVersion = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+			} 
+        	catch (NameNotFoundException e) {}
+        	Utility.logVisible( "NZBM APK VERSIONCODE: " + pkgVersion );
+        	Utility.logVisible( "NZBM DATA VERSIONCODE: " + conf.getVersionCode() );
+        	if( conf.getVersionCode() != pkgVersion ) {
+        		Utility.logVisible( "data not up to date !" );
+        		extractData();
+        	} else {
+        		startService();
+        	}
         }
         else
         {
         	Utility.log( "missing webui directory or unrar binary..." );
         	extractData();
         }
-        
+       
         // IAP
         String base64EncodedPublicKey = 
         		"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkh1dlB0LPZ1zGXXnmbM3K5V8jZ58VBFDmkQX77gq/LycA1S2aCX74rA1I871ZIVfqfGbBMGMUB6QnOHzV7zZhxazl/Jj8PIPR3S4psJGZDeCnbAI5Fm93IULnhpdO7sgiH68Q0iFlYL2IZQfIGy+zqtgkKq4SUf26Ypx/LfPg199znqI5XOrxtwaFxqawYSQEBik101HIDeWiT2fmfF1i/KyCG57oJuu61J84bbnsbfwi4OCw1nDLChiLfNAcXvSlNuSEtwpNcrP4fQb7KgxUynoL5XOE2iGvSJAB/3vAOQP6zzlhh+1FnO4QTx8EIry+k/IuhXJTmFbwIsiOJtFFwIDAQAB";
@@ -117,15 +133,6 @@ public class MainActivity extends NZBMServiceActivity
 	    super.onDestroy();
 	}
 	
-	/*
-	@Override
-	public void onConfigurationChanged(Configuration newConfig) 
-	{
-		super.onConfigurationChanged(newConfig);
-		loadAdd();
-	}
-	*/
-
 	@Override  
 	protected void onActivityResult( int requestCode, int resultCode, Intent intent )
 	{
@@ -143,7 +150,7 @@ public class MainActivity extends NZBMServiceActivity
 			super.onActivityResult(requestCode, resultCode, intent);
 		}
 	}
-
+	
 	private void extractData()
     {
 		Utility.delete( new File( Paths.webui ) );
