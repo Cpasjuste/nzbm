@@ -1,12 +1,11 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.greatlittleapps.nzbm.MainActivity" >
-
-    <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:title="@string/action_settings"
-        app:showAsAction="never"/>
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/menu_view" android:title="View" android:showAsAction="always|withText">
+        <menu>
+            <item android:id="@+id/menu_view_web" android:showAsAction="always|withText" android:title="WebView"/>
+            <item android:id="@+id/menu_view_native" android:showAsAction="always|withText" android:title="NativeView"/>
+        </menu>
+    </item>
+    
 
 </menu>

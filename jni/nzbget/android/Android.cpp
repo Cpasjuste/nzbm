@@ -30,15 +30,15 @@ extern Scanner* g_pScanner;
 
 extern "C"
 {
-    JNIEXPORT int JNICALL Java_com_malothetoad_nzbm_service_Nzbget_main( JNIEnv *env, jobject thiz, jobjectArray strArray );
-    JNIEXPORT void JNICALL Java_com_malothetoad_nzbm_service_Nzbget_pause( JNIEnv *env, jobject thiz );
-    JNIEXPORT void JNICALL Java_com_malothetoad_nzbm_service_Nzbget_resume( JNIEnv *env, jobject thiz );
-    JNIEXPORT void JNICALL Java_com_malothetoad_nzbm_service_Nzbget_shutdown( JNIEnv *env, jobject thiz );
-    JNIEXPORT jboolean JNICALL Java_com_malothetoad_nzbm_service_Nzbget_append( JNIEnv *env, jobject thiz, jstring path, jstring category, bool addToTop );
-    JNIEXPORT jstring JNICALL Java_com_malothetoad_nzbm_service_Nzbget_version( JNIEnv *env, jobject thiz );
+    JNIEXPORT int JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_main( JNIEnv *env, jobject thiz, jobjectArray strArray );
+    JNIEXPORT void JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_pause( JNIEnv *env, jobject thiz );
+    JNIEXPORT void JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_resume( JNIEnv *env, jobject thiz );
+    JNIEXPORT void JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_shutdown( JNIEnv *env, jobject thiz );
+    JNIEXPORT jboolean JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_append( JNIEnv *env, jobject thiz, jstring path, jstring category, bool addToTop );
+    JNIEXPORT jstring JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_version( JNIEnv *env, jobject thiz );
 };
 
-JNIEXPORT int JNICALL Java_com_malothetoad_nzbm_service_Nzbget_main( JNIEnv *env, jobject thiz, jobjectArray strArray )
+JNIEXPORT int JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_main( JNIEnv *env, jobject thiz, jobjectArray strArray )
 {
 	int i;
 
@@ -61,29 +61,29 @@ JNIEXPORT int JNICALL Java_com_malothetoad_nzbm_service_Nzbget_main( JNIEnv *env
 	return ret;
 }
 
-JNIEXPORT jstring JNICALL Java_com_malothetoad_nzbm_service_Nzbget_version( JNIEnv *env, jobject thiz )
+JNIEXPORT jstring JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_version( JNIEnv *env, jobject thiz )
 {
 	return env->NewStringUTF( Util::VersionRevision() );
 }
 
-JNIEXPORT void JNICALL Java_com_malothetoad_nzbm_service_Nzbget_pause( JNIEnv *env, jobject thiz )
+JNIEXPORT void JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_pause( JNIEnv *env, jobject thiz )
 {
 	if( g_pOptions )
 		g_pOptions->SetPauseDownload( true );
 }
 
-JNIEXPORT void JNICALL Java_com_malothetoad_nzbm_service_Nzbget_resume( JNIEnv *env, jobject thiz )
+JNIEXPORT void JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_resume( JNIEnv *env, jobject thiz )
 {
 	if( g_pOptions )
 		g_pOptions->SetPauseDownload( false );
 }
 
-JNIEXPORT void JNICALL Java_com_malothetoad_nzbm_service_Nzbget_shutdown( JNIEnv *env, jobject thiz )
+JNIEXPORT void JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_shutdown( JNIEnv *env, jobject thiz )
 {
 	ExitProc();
 }
 
-JNIEXPORT jboolean JNICALL Java_com_malothetoad_nzbm_service_Nzbget_append( JNIEnv *env, jobject thiz, jstring path, jstring category, bool bAddTop )
+JNIEXPORT jboolean JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_append( JNIEnv *env, jobject thiz, jstring path, jstring category, bool bAddTop )
 {
 	bool success = false;
 	const char *szNZBFilename = env->GetStringUTFChars( path, 0 );

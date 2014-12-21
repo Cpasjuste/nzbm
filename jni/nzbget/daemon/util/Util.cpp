@@ -43,7 +43,13 @@
 #include <WinIoCtl.h>
 #else
 #include <unistd.h>
+#ifdef ANDROID
+#include <sys/vfs.h> 
+#define statvfs statfs 
+#define fstatvfs fstatfs
+#else
 #include <sys/statvfs.h>
+#endif
 #include <pwd.h>
 #include <dirent.h>
 #endif

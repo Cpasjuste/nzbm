@@ -14,4 +14,3 @@ LOCAL_SRC_FILES := ./sigc++/functors/slot.cc ./sigc++/functors/slot_base.cc ./si
 LOCAL_CFLAGS += -DANDROID -DHAVE_CONFIG_H
 
 include $(BUILD_STATIC_LIBRARY)
-
