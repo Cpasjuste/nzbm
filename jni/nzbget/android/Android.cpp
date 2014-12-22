@@ -119,10 +119,10 @@ JNIEXPORT jboolean JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_append( 
 	}
 	else
 	{
-		int iNZBID = 0;
-		success = g_pScanner->AddFileToQueue(szNZBFilename, szNZBFilename, szCategory, 0,
-			"", 0, dmScore, NULL, bAddTop, false, NULL, &iNZBID );
+		g_pScanner->AddExternalFile(szNZBFilename, szCategory, 0, "", 0, dmScore, NULL, bAddTop, false, NULL, NULL, NULL, 0, NULL);
+		return true;
 	}
 	return success;
 }
+
 

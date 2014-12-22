@@ -20,7 +20,7 @@ public class Receiver extends NZBMServiceActivity
         
         if( getIntent().getDataString() != null )
         {
-        	nzbPath = getIntent().getDataString();
+        	nzbPath = getIntent().getData().getPath();
         	Utility.log( "nzbPath="+nzbPath );
         	this.startService();
         }

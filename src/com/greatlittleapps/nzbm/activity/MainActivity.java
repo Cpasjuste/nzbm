@@ -55,16 +55,8 @@ public class MainActivity extends NZBMServiceActivity
         		&& new File ( Paths.config ).exists() )
         {
         	conf = new Config( Paths.config );
-        	// ensure data (webui,config..) is in sync with package data
-        	int pkgVersion = 0;
-        	try 
-        	{
-				pkgVersion = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
-			} 
-        	catch (NameNotFoundException e) {}
-        	Utility.logVisible( "NZBM APK VERSIONCODE: " + pkgVersion );
         	Utility.logVisible( "NZBM DATA VERSIONCODE: " + conf.getVersionCode() );
-        	if( conf.getVersionCode() != pkgVersion ) {
+        	if( conf.getVersionCode() != 140 ) {
         		Utility.logVisible( "data not up to date !" );
         		extractData();
         	} else {

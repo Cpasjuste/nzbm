@@ -71,7 +71,7 @@ public class Nzbget
 	}
 	public boolean addNZBURL( String path )
 	{
-		return appendurl( path, "", false );
+		return append( path, "", false );
 	}
 
 	// Native functions
@@ -79,7 +79,7 @@ public class Nzbget
 	private native void shutdown();
 	private native String version();
 	private native boolean append( String path, String category, boolean addToTop );
-	private native boolean appendurl( String path, String category, boolean addToTop );
+	//private native boolean appendurl( String path, String category, boolean addToTop );
 	
 	static 
 	{
