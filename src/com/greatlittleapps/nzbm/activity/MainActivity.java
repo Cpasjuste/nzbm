@@ -20,13 +20,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 
 import com.google.android.gms.ads.*;
-
 
 public class MainActivity extends NZBMServiceActivity 
 {

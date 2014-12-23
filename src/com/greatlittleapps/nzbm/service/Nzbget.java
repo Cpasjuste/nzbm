@@ -69,10 +69,6 @@ public class Nzbget
 	{
 		return append( path, "", false );
 	}
-	public boolean addNZBURL( String path )
-	{
-		return append( path, "", false );
-	}
 
 	// Native functions
 	private native int main( String[] pArgs );

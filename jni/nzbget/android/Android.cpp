@@ -91,7 +91,8 @@ JNIEXPORT jboolean JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_append( 
 
 	debug("FileName=%s", szNZBFilename);
 	
-	if (!strncasecmp(szNZBFilename, "http://", 6) || !strncasecmp(szNZBFilename, "https://", 7))
+	if (!strncasecmp(szNZBFilename, "http://", 6)
+			|| !strncasecmp(szNZBFilename, "https://", 7))
 	{
 		// add url
 		NZBInfo* pNZBInfo = new NZBInfo();
@@ -119,7 +120,7 @@ JNIEXPORT jboolean JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_append( 
 	}
 	else
 	{
-		g_pScanner->AddExternalFile(szNZBFilename, szCategory, 0, "", 0, dmScore, NULL, bAddTop, false, NULL, NULL, NULL, 0, NULL);
+		g_pScanner->AddExternalFile(szNZBFilename, szCategory, 0, "", 0, dmScore, NULL, bAddTop, false, NULL, szNZBFilename, NULL, 0, NULL);
 		return true;
 	}
 	return success;

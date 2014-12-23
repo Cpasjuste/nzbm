@@ -19,10 +19,21 @@ public class Receiver extends NZBMServiceActivity
         dialog = new UtilityMessage( this );
         
         if( getIntent().getDataString() != null )
-        {
-        	nzbPath = getIntent().getData().getPath();
-        	Utility.log( "nzbPath="+nzbPath );
-        	this.startService();
+        {	
+        	nzbPath = getIntent().getData().toString();
+        	if( nzbPath.startsWith( "http" ) 
+        			|| nzbPath.startsWith( "https" ) )
+        	{
+        		Utility.logVisible( "nzbPath="+nzbPath );
+        		this.startService();
+        		return;
+        	}
+        	else
+        	{
+        		nzbPath = getIntent().getData().getPath();
+        		Utility.logVisible( "nzbPath="+nzbPath );
+        		this.startService();
+        	}
         }
         else
         {
@@ -77,17 +88,7 @@ public class Receiver extends NZBMServiceActivity
         {
             public void onClick(DialogInterface dialog, int whichButton) 
             {
-            	if( nzbPath.startsWith( "http") 
-                		|| nzbPath.startsWith( "https")
-                		|| nzbPath.startsWith( "ftp")
-                		|| nzbPath.startsWith( "sftp") )
-            	{
-            		nzbget.addNZBURL( nzbPath );
-            	}
-            	else
-            	{
-            		nzbget.addNZB( nzbPath );
-            	}
+            	nzbget.addNZB( nzbPath );
             	finish();
             }
         })
