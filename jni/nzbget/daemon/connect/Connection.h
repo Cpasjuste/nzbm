@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 973 $
- * $Date: 2014-04-01 23:06:31 +0200 (Tue, 01 Apr 2014) $
+ * $Revision: 1250 $
+ * $Date: 2015-03-31 21:52:57 +0200 (mar. 31 mars 2015) $
  *
  */
 
@@ -61,8 +61,31 @@ protected:
 	bool				m_bSuppressErrors;
 	char				m_szRemoteAddr[20];
 	int					m_iTotalBytesRead;
+	bool				m_bBroken;
+
+	struct SockAddr
+	{
+		int				ai_family;
+		int				ai_socktype;
+		int				ai_protocol;
+		bool			operator==(const SockAddr& rhs) const
+							{ return memcmp(this, &rhs, sizeof(SockAddr)) == 0; }
+	};
+
 #ifndef DISABLE_TLS
-	TLSSocket*			m_pTLSSocket;
+	class ConTLSSocket: public TLSSocket
+	{
+	private:
+		Connection*		m_pOwner;
+	protected:
+		virtual void	PrintError(const char* szErrMsg) { m_pOwner->PrintError(szErrMsg); }
+	public:
+						ConTLSSocket(SOCKET iSocket, bool bIsClient, const char* szCertFile,
+							const char* szKeyFile, const char* szCipher, Connection* pOwner):
+							TLSSocket(iSocket, bIsClient, szCertFile, szKeyFile, szCipher), m_pOwner(pOwner) {}
+	};
+
+	ConTLSSocket*		m_pTLSSocket;
 	bool				m_bTLSError;
 #endif
 #ifndef HAVE_GETADDRINFO
@@ -73,8 +96,11 @@ protected:
 
 						Connection(SOCKET iSocket, bool bTLS);
 	void				ReportError(const char* szMsgPrefix, const char* szMsgArg, bool PrintErrCode, int herrno);
+	virtual void		PrintError(const char* szErrMsg);
 	bool				DoConnect();
 	bool				DoDisconnect();
+	bool				InitSocketOpts();
+	bool				ConnectWithTimeout(void* address, int address_len);
 #ifndef HAVE_GETADDRINFO
 	unsigned int		ResolveHostAddr(const char* szHost);
 #endif

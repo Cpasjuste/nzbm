@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2008 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 956 $
- * $Date: 2014-02-24 23:11:14 +0100 (Mon, 24 Feb 2014) $
+ * $Revision: 1250 $
+ * $Date: 2015-03-31 21:52:57 +0200 (mar. 31 mars 2015) $
  *
  */
 
@@ -53,6 +53,7 @@ public:
 	const char* 		Request(const char* req);
 	const char*			JoinGroup(const char* grp);
 	bool				GetAuthError() { return m_bAuthError; }
+
 };
 
 #endif

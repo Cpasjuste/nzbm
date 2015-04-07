@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1139 $
- * $Date: 2014-10-09 23:11:42 +0200 (Thu, 09 Oct 2014) $
+ * $Revision: 1221 $
+ * $Date: 2015-02-26 21:57:38 +0100 (jeu. 26 févr. 2015) $
  *
  */
 
@@ -27,6 +27,7 @@
 #define UNPACK_H
 
 #include <deque>
+#include <vector>
 
 #include "Log.h"
 #include "Thread.h"
@@ -50,6 +51,14 @@ private:
 		bool			Exists(const char* szFilename);
 	};
 
+	typedef std::vector<char*>		ParamListBase;
+	class ParamList : public ParamListBase
+	{
+	public:
+						~ParamList();
+		bool			Exists(const char* szParam);
+	};
+
 private:
 	PostInfo*			m_pPostInfo;
 	char				m_szName[1024];
@@ -71,19 +80,22 @@ private:
 	bool				m_bUnpackOK;
 	bool				m_bUnpackStartError;
 	bool				m_bUnpackSpaceError;
-	bool				m_bUnpackPasswordError4;
-	bool				m_bUnpackPasswordError5;
+	bool				m_bUnpackDecryptError;
+	bool				m_bUnpackPasswordError;
 	bool				m_bCleanedUpDisk;
 	bool				m_bAutoTerminated;
 	EUnpacker			m_eUnpacker;
 	bool				m_bFinalDirCreated;
 	FileList			m_JoinedFiles;
+	bool				m_bPassListTried;
 
 protected:
 	virtual bool		ReadLine(char* szBuf, int iBufSize, FILE* pStream);
 	virtual void		AddMessage(Message::EKind eKind, const char* szText);
-	void				ExecuteUnrar();
-	void				ExecuteSevenZip(bool bMultiVolumes);
+	void				ExecuteUnpack(EUnpacker eUnpacker, const char* szPassword, bool bMultiVolumes);
+	void				ExecuteUnrar(const char* szPassword);
+	void				ExecuteSevenZip(const char* szPassword, bool bMultiVolumes);
+	void				UnpackArchives(EUnpacker eUnpacker, bool bMultiVolumes);
 	void				JoinSplittedFiles();
 	bool				JoinFile(const char* szFragBaseName);
 	void				Completed();
@@ -95,6 +107,7 @@ protected:
 	void				RequestParCheck(bool bForceRepair);
 #endif
 	bool				FileHasRarSignature(const char* szFilename);
+	bool				PrepareCmdParams(const char* szCommand, ParamList* pParams, const char* szInfoName);
 
 public:
 	virtual void		Run();
@@ -111,6 +124,9 @@ private:
 
 	bool				MoveFiles();
 
+protected:
+	virtual void		AddMessage(Message::EKind eKind, const char* szText);
+
 public:
 	virtual void		Run();
 	static void			StartJob(PostInfo* pPostInfo);
@@ -124,6 +140,9 @@ private:
 	char				m_szFinalDir[1024];
 
 	bool				Cleanup(const char* szDestDir, bool *bDeleted);
+
+protected:
+	virtual void		AddMessage(Message::EKind eKind, const char* szText);
 
 public:
 	virtual void		Run();

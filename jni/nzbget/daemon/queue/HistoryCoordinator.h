@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * $Revision: 951 $
- * $Date: 2014-08-06 01:45:28 +0200 (Wed, 06 Aug 2014) $
+ * $Date: 2015-01-15 21:46:17 +0100 (jeu. 15 janv. 2015) $
  *
  */
 
@@ -34,8 +34,10 @@ private:
 	void				HistoryDelete(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bFinal);
 	void				HistoryReturn(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bReprocess);
 	void				HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory, HistoryInfo* pHistoryInfo, bool bRestorePauseState);
-	void				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
+	bool				HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText);
 	void				HistorySetDupeParam(HistoryInfo* pHistoryInfo, DownloadQueue::EEditAction eAction, const char* szText);
+	bool				HistorySetCategory(HistoryInfo* pHistoryInfo, const char* szText);
+	bool				HistorySetName(HistoryInfo* pHistoryInfo, const char* szText);
 	void				HistoryTransformToDup(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex);
 	void				SaveQueue(DownloadQueue* pDownloadQueue);
 

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 956 $
- * $Date: 2014-02-24 23:11:14 +0100 (Mon, 24 Feb 2014) $
+ * $Revision: 1250 $
+ * $Date: 2015-03-31 21:52:57 +0200 (mar. 31 mars 2015) $
  *
  */
 
@@ -99,8 +99,8 @@ bool NNTPConnection::Authenticate()
 {
 	if (strlen(m_pNewsServer->GetUser()) == 0 || strlen(m_pNewsServer->GetPassword()) == 0)
 	{
-		error("%c%s (%s) requested authorization but username/password are not set in settings", 
-			toupper(m_pNewsServer->GetName()[0]), m_pNewsServer->GetName() + 1, m_pNewsServer->GetHost());
+		ReportError("Could not connect to %s: server requested authorization but username/password are not set in settings",
+			m_pNewsServer->GetHost(), false, 0);
 		m_bAuthError = true;
 		return false;
 	}
@@ -125,7 +125,7 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportErrorAnswer("Authorization for server%i (%s) failed: Connection closed by remote host", NULL);
+		ReportErrorAnswer("Authorization for %s (%s) failed: Connection closed by remote host", NULL);
 		return false;
 	}
 
@@ -147,7 +147,7 @@ bool NNTPConnection::AuthInfoUser(int iRecur)
 
 	if (GetStatus() != csCancelled)
 	{
-		ReportErrorAnswer("Authorization for server%i (%s) failed (Answer: %s)", answer);
+		ReportErrorAnswer("Authorization for %s (%s) failed: %s", answer);
 	}
 	return false;
 }
@@ -168,7 +168,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 	char* answer = ReadLine(m_szLineBuf, CONNECTION_LINEBUFFER_SIZE, NULL);
 	if (!answer)
 	{
-		ReportErrorAnswer("Authorization for server%i (%s) failed: Connection closed by remote host", NULL);
+		ReportErrorAnswer("Authorization failed for %s (%s): Connection closed by remote host", NULL);
 		return false;
 	}
 	else if (!strncmp(answer, "2", 1))
@@ -185,7 +185,7 @@ bool NNTPConnection::AuthInfoPass(int iRecur)
 
 	if (GetStatus() != csCancelled)
 	{
-		ReportErrorAnswer("Authorization for server%i (%s) failed (Answer: %s)", answer);
+		ReportErrorAnswer("Authorization for %s (%s) failed: %s", answer);
 	}
 	return false;
 }
@@ -237,14 +237,14 @@ bool NNTPConnection::Connect()
 
 	if (!answer)
 	{
-		ReportErrorAnswer("Connection to server%i (%s) failed: Connection closed by remote host", NULL);
+		ReportErrorAnswer("Connection to %s (%s) failed: Connection closed by remote host", NULL);
 		Disconnect();
 		return false;
 	}
 
 	if (strncmp(answer, "2", 1))
 	{
-		ReportErrorAnswer("Connection to server%i (%s) failed (Answer: %s)", answer);
+		ReportErrorAnswer("Connection to %s (%s) failed: %s", answer);
 		Disconnect();
 		return false;
 	}
@@ -264,7 +264,10 @@ bool NNTPConnection::Disconnect()
 {
 	if (m_eStatus == csConnected)
 	{
-		Request("quit\r\n");
+		if (!m_bBroken)
+		{
+			Request("quit\r\n");
+		}
 		free(m_szActiveGroup);
 		m_szActiveGroup = NULL;
 	}
@@ -274,7 +277,7 @@ bool NNTPConnection::Disconnect()
 void NNTPConnection::ReportErrorAnswer(const char* szMsgPrefix, const char* szAnswer)
 {
 	char szErrStr[1024];
-	snprintf(szErrStr, 1024, szMsgPrefix, m_pNewsServer->GetID(), m_pNewsServer->GetHost(), szAnswer);
+	snprintf(szErrStr, 1024, szMsgPrefix, m_pNewsServer->GetName(), m_pNewsServer->GetHost(), szAnswer);
 	szErrStr[1024-1] = '\0';
 	
 	ReportError(szErrStr, NULL, false, 0);

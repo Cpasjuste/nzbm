@@ -183,7 +183,6 @@ AM_CPPFLAGS = \
 
 EXTRA_DIST = \
 	Makefile.cvs \
-	nzbgetd \
 	$(windows_FILES) \
 	$(osx_FILES)
 
@@ -191,9 +190,23 @@ windows_FILES = \
 	daemon/windows/NTService.cpp \
 	daemon/windows/NTService.h \
 	daemon/windows/win32.h \
+	daemon/windows/WinConsole.cpp \
+	daemon/windows/WinConsole.h \
 	nzbget.sln \
 	nzbget.vcproj \
-	nzbget-shell.bat
+	windows/nzbget-command-shell.bat  \
+	windows/install-update.bat  \
+	windows/README-WINDOWS.txt  \
+	windows/package-info.json  \
+	windows/resources/mainicon.ico \
+	windows/resources/nzbget.rc \
+	windows/resources/resource.h \
+	windows/resources/trayicon_idle.ico \
+	windows/resources/trayicon_paused.ico \
+	windows/resources/trayicon_working.ico \
+	windows/setup/nzbget-setup.nsi \
+	windows/setup/install.bmp \
+	windows/setup/uninstall.bmp
 
 osx_FILES = \
 	osx/App_Prefix.pch \
@@ -219,8 +232,6 @@ osx_FILES = \
 	osx/Resources/Images/mainicon.icns \
 	osx/Resources/Images/statusicon.png \
 	osx/Resources/Images/statusicon@2x.png \
-	osx/Resources/Images/statusicon-inv.png \
-	osx/Resources/Images/statusicon-inv@2x.png \
 	osx/Resources/licenses/license-bootstrap.txt \
 	osx/Resources/licenses/license-jquery-GPL.txt \
 	osx/Resources/licenses/license-jquery-MIT.txt \
@@ -275,7 +286,6 @@ scripts_FILES = \
 	scripts/Logger.py
 
 # Install
-sbin_SCRIPTS = nzbgetd
 dist_doc_DATA = $(doc_FILES)
 exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
@@ -292,13 +302,6 @@ nobase_dist_scripts_SCRIPTS = $(scripts_FILES)
 # 2) sed < original.temp > original
 # 3) delete original.temp
 # These steps ensure that the output file has the same permissions as the original file.
-
-# Configure installed script
-install-exec-hook:
-	rm -f "$(DESTDIR)$(sbindir)/nzbgetd.temp"
-	cp "$(DESTDIR)$(sbindir)/nzbgetd" "$(DESTDIR)$(sbindir)/nzbgetd.temp"
-	sed 's?/usr/local/bin?$(bindir)?' < "$(DESTDIR)$(sbindir)/nzbgetd.temp" > "$(DESTDIR)$(sbindir)/nzbgetd"
-	rm "$(DESTDIR)$(sbindir)/nzbgetd.temp"
 
 # Prepare example configuration file
 install-data-hook:

@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1045 $
- * $Date: 2014-06-19 17:00:46 +0200 (Thu, 19 Jun 2014) $
+ * $Revision: 1234 $
+ * $Date: 2015-03-17 22:58:49 +0100 (mar. 17 mars 2015) $
  *
  */
 
@@ -48,24 +48,33 @@ public:
 		hmGet
 	};
 
+	enum EUserAccess
+	{
+		uaControl,
+		uaRestricted,
+		uaAdd
+	};
+
 private:
 	char*				m_szRequest;
 	const char*			m_szContentType;
 	ERpcProtocol		m_eProtocol;
 	EHttpMethod			m_eHttpMethod;
+	EUserAccess			m_eUserAccess;
 	char*				m_szUrl;
 	StringBuilder		m_cResponse;
 
 	void				Dispatch();
 	XmlCommand*			CreateCommand(const char* szMethodName);
 	void				MutliCall();
-	void				BuildResponse(const char* szResponse, const char* szCallbackFunc, bool bFault);
+	void				BuildResponse(const char* szResponse, const char* szCallbackFunc, bool bFault, const char* szRequestId);
 
 public:
 						XmlRpcProcessor();
 						~XmlRpcProcessor();
 	void				Execute();
 	void				SetHttpMethod(EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
+	void				SetUserAccess(EUserAccess eUserAccess) { m_eUserAccess = eUserAccess; }
 	void				SetUrl(const char* szUrl);
 	void				SetRequest(char* szRequest) { m_szRequest = szRequest; }
 	const char*			GetResponse() { return m_cResponse.GetBuffer(); }
@@ -83,6 +92,7 @@ protected:
 	bool				m_bFault;
 	XmlRpcProcessor::ERpcProtocol	m_eProtocol;
 	XmlRpcProcessor::EHttpMethod	m_eHttpMethod;
+	XmlRpcProcessor::EUserAccess	m_eUserAccess;
 
 	void				BuildErrorResponse(int iErrCode, const char* szErrText, ...);
 	void				BuildBoolResponse(bool bOK);
@@ -106,6 +116,7 @@ public:
 	void				SetRequest(char* szRequest) { m_szRequest = szRequest; m_szRequestPtr = m_szRequest; }
 	void				SetProtocol(XmlRpcProcessor::ERpcProtocol eProtocol) { m_eProtocol = eProtocol; }
 	void				SetHttpMethod(XmlRpcProcessor::EHttpMethod eHttpMethod) { m_eHttpMethod = eHttpMethod; }
+	void				SetUserAccess(XmlRpcProcessor::EUserAccess eUserAccess) { m_eUserAccess = eUserAccess; }
 	const char*			GetResponse() { return m_StringBuilder.GetBuffer(); }
 	const char*			GetCallbackFunc() { return m_szCallbackFunc; }
 	bool				GetFault() { return m_bFault; }

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1126 $
- * $Date: 2014-09-17 00:15:02 +0200 (Wed, 17 Sep 2014) $
+ * $Revision: 1221 $
+ * $Date: 2015-02-26 21:57:38 +0100 (jeu. 26 févr. 2015) $
  *
  */
 
@@ -262,7 +262,7 @@ void ParRenamer::LoadParFile(const char* szParFilename)
 		Par2RepairerSourceFile* sourceFile = (*it).second;
 		if (!sourceFile || !sourceFile->GetDescriptionPacket())
 		{
-			warn("Damaged par2-file detected: %s", szParFilename);
+			PrintMessage(Message::mkWarning, "Damaged par2-file detected: %s", szParFilename);
 			continue;
 		}
 		m_FileHashList.push_back(new FileHash(sourceFile->GetDescriptionPacket()->FileName().c_str(),
@@ -315,11 +315,11 @@ void ParRenamer::CheckMissing()
 			if (Util::MatchFileExt(pFileHash->GetFilename(), g_pOptions->GetParIgnoreExt(), ",;") ||
 				Util::MatchFileExt(pFileHash->GetFilename(), g_pOptions->GetExtCleanupDisk(), ",;"))
 			{
-				info("File %s is missing, ignoring", pFileHash->GetFilename());
+				PrintMessage(Message::mkInfo, "File %s is missing, ignoring", pFileHash->GetFilename());
 			}
 			else
 			{
-				info("File %s is missing", pFileHash->GetFilename());
+				PrintMessage(Message::mkInfo, "File %s is missing", pFileHash->GetFilename());
 				m_bHasMissedFiles = true;
 			}
 		}

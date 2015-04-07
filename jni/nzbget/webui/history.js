@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1142 $
- * $Date: 2014-10-12 16:23:54 +0200 (Sun, 12 Oct 2014) $
+ * $Revision: 1245 $
+ * $Date: 2015-03-26 23:28:30 +0100 (jeu. 26 mars 2015) $
  *
  */
 
@@ -78,8 +78,8 @@ var History = (new function($)
 			});
 
 		$HistoryTable.on('click', 'a', editClick);
-		$HistoryTable.on('click', 'tbody div.check',
-			function(event) { $HistoryTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
+		$HistoryTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
+			function(event) { $HistoryTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$HistoryTable.on('click', 'thead div.check',
 			function() { $HistoryTable.fasttable('titleCheckClick') });
 		$HistoryTable.on('mousedown', Util.disableShiftMouseDown);
@@ -269,7 +269,7 @@ var History = (new function($)
 		}
 	}
 
-	this.deleteClick = function()
+	this.actionClick = function(action)
 	{
 		var checkedRows = $HistoryTable.fasttable('checkedRows');
 		if (checkedRows.length == 0)
@@ -279,6 +279,7 @@ var History = (new function($)
 		}
 
 		var hasNzb = false;
+		var hasUrl = false;
 		var hasDup = false;
 		var hasFailed = false;
 		for (var i = 0; i < history.length; i++)
@@ -287,23 +288,71 @@ var History = (new function($)
 			if (checkedRows.indexOf(hist.ID) > -1)
 			{
 				hasNzb |= hist.Kind === 'NZB';
+				hasUrl |= hist.Kind === 'URL';
 				hasDup |= hist.Kind === 'DUP';
 				hasFailed |= hist.ParStatus === 'FAILURE' || hist.UnpackStatus === 'FAILURE';
 			}
 		}
 
-		HistoryUI.deleteConfirm(historyDelete, hasNzb, hasDup, hasFailed, true);
+		switch (action)
+		{
+			case 'DELETE':
+				notification = '#Notif_History_Deleted';
+				HistoryUI.deleteConfirm(historyAction, hasNzb, hasDup, hasFailed, true);
+				break;
+
+			case 'REPROCESS':
+				if (hasUrl || hasDup)
+				{
+					Notification.show('#Notif_History_CantReprocess');
+					return;
+				}
+				notification = '#Notif_History_Reprocess';
+				historyAction('HistoryProcess');
+				break;
+
+			case 'REDOWNLOAD':
+				if (hasDup)
+				{
+					Notification.show('#Notif_History_CantRedownload');
+					return;
+				}
+				notification = '#Notif_History_Returned';
+				historyAction('HistoryRedownload');
+				break;
+
+			case 'MARKSUCCESS':
+			case 'MARKGOOD':
+			case 'MARKBAD':
+				if (hasUrl)
+				{
+					Notification.show('#Notif_History_CantMark');
+					return;
+				}
+				notification = '#Notif_History_Marked';
+
+				ConfirmDialog.showModal(action === 'MARKSUCCESS' ? 'HistoryEditSuccessConfirmDialog' : 
+					action === 'MARKGOOD' ? 'HistoryEditGoodConfirmDialog' : 'HistoryEditBadConfirmDialog',
+					function () // action
+					{
+						historyAction(action === 'MARKSUCCESS' ? 'HistoryMarkSuccess' :
+							action === 'MARKGOOD' ? 'HistoryMarkGood' :'HistoryMarkBad');
+					},
+					function (_dialog) // init
+					{
+						HistoryUI.confirmMulti(checkedRows.length > 1);
+					}
+				);
+				break;
+		}
 	}
 
-	function historyDelete(command)
+	function historyAction(command)
 	{
 		Refresher.pause();
-
 		var IDs = $HistoryTable.fasttable('checkedRows');
-
 		RPC.call('editqueue', [command, 0, '', [IDs]], function()
 		{
-			notification = '#Notif_History_Deleted';
 			editCompleted();
 		});
 	}
@@ -321,6 +370,7 @@ var History = (new function($)
 	function editClick(e)
 	{
 		e.preventDefault();
+		e.stopPropagation();
 
 		var histid = $(this).attr('histid');
 		$(this).blur();
@@ -456,14 +506,7 @@ var HistoryUI = (new function($)
 		function init(_dialog)
 		{
 			dialog = _dialog;
-
-			if (!multi)
-			{
-				var html = $('#ConfirmDialog_Text').html();
-				html = html.replace(/records/g, 'record');
-				$('#ConfirmDialog_Text').html(html);
-			}
-
+			HistoryUI.confirmMulti(multi);
 			$('#HistoryDeleteConfirmDialog_Hide', dialog).prop('checked', true);
 			Util.show($('#HistoryDeleteConfirmDialog_Options', dialog), hasNzb && dupeCheck);
 			Util.show($('#HistoryDeleteConfirmDialog_Simple', dialog), !(hasNzb && dupeCheck));
@@ -483,5 +526,14 @@ var HistoryUI = (new function($)
 
 		ConfirmDialog.showModal('HistoryDeleteConfirmDialog', action, init);
 	}
-
+	
+	this.confirmMulti = function(multi)
+	{
+		if (multi === undefined || !multi)
+		{
+			var html = $('#ConfirmDialog_Text').html();
+			html = html.replace(/records/g, 'record');
+			$('#ConfirmDialog_Text').html(html);
+		}
+	}
 }(jQuery));

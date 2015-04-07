@@ -18,7 +18,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * $Revision: 1135 $
- * $Date: 2014-10-03 22:58:11 +0200 (Fri, 03 Oct 2014) $
+ * $Date: 2014-10-03 22:58:11 +0200 (ven. 03 oct. 2014) $
  *
  */
 
@@ -128,16 +128,16 @@ public:
 	void				InitOptions();
 	void				ScanNZBDir(bool bSyncMode);
 	void				Check();
-#ifdef ANDROID
-	bool				AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory,
-							int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
-							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo, int* pNZBID);
-#endif
 	EAddStatus			AddExternalFile(const char* szNZBName, const char* szCategory, int iPriority,
 							const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
 							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo,
 							const char* szFileName, const char* szBuffer, int iBufSize, int* pNZBID);
 	void				InitPPParameters(const char* szCategory, NZBParameterList* pParameters, bool bReset);
+#ifdef ANDROID
+	bool				AddFileToQueue(const char* szFilename, const char* szNZBName, const char* szCategory,
+							int iPriority, const char* szDupeKey, int iDupeScore, EDupeMode eDupeMode,
+							NZBParameterList* pParameters, bool bAddTop, bool bAddPaused, NZBInfo* pUrlInfo, int* pNZBID);
+#endif
 };
 
 #endif

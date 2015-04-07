@@ -2,7 +2,7 @@
  *  This file if part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 956 $
- * $Date: 2014-02-24 23:11:14 +0100 (Mon, 24 Feb 2014) $
+ * $Revision: 1196 $
+ * $Date: 2015-01-25 21:15:18 +0100 (dim. 25 janv. 2015) $
  *
  */
 
@@ -28,6 +28,7 @@
 #define NEWSSERVER_H
 
 #include <vector>
+#include <time.h>
 
 class NewsServer
 {
@@ -47,11 +48,14 @@ private:
 	bool			m_bJoinGroup;
 	bool			m_bTLS;
 	char*			m_szCipher;
+	int				m_iRetention;
+	time_t			m_tBlockTime;
 
 public:
 					NewsServer(int iID, bool bActive, const char* szName, const char* szHost, int iPort,
 						const char* szUser, const char* szPass, bool bJoinGroup,
-						bool bTLS, const char* szCipher, int iMaxConnections, int iLevel, int iGroup);
+						bool bTLS, const char* szCipher, int iMaxConnections, int iRetention,
+						int iLevel, int iGroup);
 					~NewsServer();
 	int				GetID() { return m_iID; }
 	int				GetStateID() { return m_iStateID; }
@@ -71,6 +75,9 @@ public:
 	int				GetJoinGroup() { return m_bJoinGroup; }
 	bool			GetTLS() { return m_bTLS; }
 	const char*		GetCipher() { return m_szCipher; }
+	int				GetRetention() { return m_iRetention; }
+	time_t			GetBlockTime() { return m_tBlockTime; }
+	void			SetBlockTime(time_t tBlockTime) { m_tBlockTime = tBlockTime; }
 };
 
 typedef std::vector<NewsServer*>		Servers;

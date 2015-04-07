@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007  Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 956 $
- * $Date: 2014-02-24 23:11:14 +0100 (Mon, 24 Feb 2014) $
+ * $Revision: 1176 $
+ * $Date: 2014-11-30 15:24:23 +0100 (dim. 30 nov. 2014) $
  *
  */
 
@@ -30,5 +30,6 @@ typedef void (*RunProc)(void);
 
 void InstallUninstallServiceCheck(int argc, char *argv[]);
 void StartService(RunProc RunProcPtr);
+bool IsServiceRunning();
 
 #endif

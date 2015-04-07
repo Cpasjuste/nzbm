@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1139 $
- * $Date: 2014-10-09 23:11:42 +0200 (Thu, 09 Oct 2014) $
+ * $Revision: 1245 $
+ * $Date: 2015-03-26 23:28:30 +0100 (jeu. 26 mars 2015) $
  *
  */
 
@@ -398,7 +398,8 @@ public:
 	{
 		ksNone,
 		ksBad,
-		ksGood
+		ksGood,
+		ksSuccess
 	};
 
 	enum EUrlStatus
@@ -417,8 +418,6 @@ public:
 		nkNzb,
 		nkUrl
 	};
-
-	typedef std::deque<Message*>		Messages;
 
 	static const int FORCE_PRIORITY = 900;
 
@@ -489,7 +488,7 @@ private:
 	ServerStatList		m_ServerStats;
 	ServerStatList		m_CurrentServerStats;
 	Mutex				m_mutexLog;
-	Messages			m_Messages;
+	MessageList			m_Messages;
 	int					m_iIDMessageGen;
 	PostInfo*			m_pPostInfo;
 	long long 			m_lDownloadedSize;
@@ -502,9 +501,13 @@ private:
 	bool				m_bReprocess;
 	time_t				m_tQueueScriptTime;
 	bool				m_bParFull;
+	int					m_iMessageCount;
+	int					m_iCachedMessageCount;
 
 	static int			m_iIDGen;
 	static int			m_iIDMax;
+
+	void				ClearMessages();
 
 public:
 						NZBInfo();
@@ -666,9 +669,13 @@ public:
 	bool				IsDupeSuccess();
 	const char*			MakeTextStatus(bool bIgnoreScriptStatus);
 
-	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
-	Messages*			LockMessages();
-	void				UnlockMessages();
+	void				AddMessage(Message::EKind eKind, const char* szText);
+	void				PrintMessage(Message::EKind eKind, const char* szFormat, ...);
+	int					GetMessageCount() { return m_iMessageCount; }
+	void				SetMessageCount(int iMessageCount) { m_iMessageCount = iMessageCount; }
+	int					GetCachedMessageCount() { return m_iCachedMessageCount; }
+	MessageList*		LockCachedMessages();
+	void				UnlockCachedMessages();
 };
 
 typedef std::deque<NZBInfo*> NZBQueueBase;
@@ -703,7 +710,6 @@ public:
 		ptFinished
 	};
 
-	typedef std::deque<Message*>	Messages;
 	typedef std::vector<char*>		ParredFiles;
 
 private:
@@ -713,6 +719,10 @@ private:
 	bool				m_bRequestParCheck;
 	bool				m_bForceParFull;
 	bool				m_bForceRepair;
+	bool				m_bParRepaired;
+	bool				m_bUnpackTried;
+	bool				m_bPassListTried;
+	int					m_eLastUnpackStatus;
 	EStage				m_eStage;
 	char*				m_szProgressLabel;
 	int					m_iFileProgress;
@@ -721,9 +731,6 @@ private:
 	time_t				m_tStageTime;
 	Thread*				m_pPostThread;
 	
-	Mutex				m_mutexLog;
-	Messages			m_Messages;
-	int					m_iIDMessageGen;
 	ParredFiles			m_ParredFiles;
 
 public:
@@ -753,11 +760,16 @@ public:
 	void				SetForceParFull(bool bForceParFull) { m_bForceParFull = bForceParFull; }
 	bool				GetForceRepair() { return m_bForceRepair; }
 	void				SetForceRepair(bool bForceRepair) { m_bForceRepair = bForceRepair; }
+	bool				GetParRepaired() { return m_bParRepaired; }
+	void				SetParRepaired(bool bParRepaired) { m_bParRepaired = bParRepaired; }
+	bool				GetUnpackTried() { return m_bUnpackTried; }
+	void				SetUnpackTried(bool bUnpackTried) { m_bUnpackTried = bUnpackTried; }
+	bool				GetPassListTried() { return m_bPassListTried; }
+	void				SetPassListTried(bool bPassListTried) { m_bPassListTried = bPassListTried; }
+	int					GetLastUnpackStatus() { return m_eLastUnpackStatus; }
+	void				SetLastUnpackStatus(int eUnpackStatus) { m_eLastUnpackStatus = eUnpackStatus; }
 	Thread*				GetPostThread() { return m_pPostThread; }
 	void				SetPostThread(Thread* pPostThread) { m_pPostThread = pPostThread; }
-	void				AppendMessage(Message::EKind eKind, const char* szText);
-	Messages*			LockMessages();
-	void				UnlockMessages();
 	ParredFiles*		GetParredFiles() { return &m_ParredFiles; }
 };
 
@@ -897,6 +909,7 @@ public:
 		eaGroupSetDupeKey,		// set duplicate key
 		eaGroupSetDupeScore,	// set duplicate score
 		eaGroupSetDupeMode,		// set duplicate mode
+		eaGroupSort,			// sort groups
 		eaPostDelete,			// cancel post-processing
 		eaHistoryDelete,		// hide history-item
 		eaHistoryFinalDelete,	// delete history-item
@@ -909,7 +922,10 @@ public:
 		eaHistorySetDupeMode,	// set duplicate mode
 		eaHistorySetDupeBackup,	// set duplicate backup flag
 		eaHistoryMarkBad,		// mark history-item as bad (and download other duplicate)
-		eaHistoryMarkGood		// mark history-item as good (and push it into dup-history)
+		eaHistoryMarkGood,		// mark history-item as good (and push it into dup-history)
+		eaHistoryMarkSuccess,	// mark history-item as success (and do nothing more)
+		eaHistorySetCategory,	// set or change category for history-item
+		eaHistorySetName		// set history-item name (rename)
 	};
 
 	enum EMatchMode

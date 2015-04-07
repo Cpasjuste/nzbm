@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1122 $
- * $Date: 2014-09-08 21:35:11 +0200 (Mon, 08 Sep 2014) $
+ * $Revision: 1176 $
+ * $Date: 2014-11-30 15:24:23 +0100 (dim. 30 nov. 2014) $
  *
  */
 
@@ -200,4 +200,25 @@ void InstallUninstallServiceCheck(int argc, char *argv[])
 		UnInstallService();
 		exit(0);
 	}
+}
+
+bool IsServiceRunning()
+{
+	SC_HANDLE scm = OpenSCManager(0, 0, 0);
+	if (!scm)
+	{
+		return false;
+	}
+
+	SC_HANDLE hService = OpenService(scm, "NZBGet", SERVICE_QUERY_STATUS);
+	SERVICE_STATUS ServiceStatus;
+	bool bRunning = false;
+	if (hService && QueryServiceStatus(hService, &ServiceStatus))
+	{
+		bRunning = ServiceStatus.dwCurrentState != SERVICE_STOPPED;
+	}
+
+	CloseServiceHandle(scm);
+
+	return bRunning;
 }

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1139 $
- * $Date: 2014-10-09 23:11:42 +0200 (Thu, 09 Oct 2014) $
+ * $Revision: 1229 $
+ * $Date: 2015-03-10 23:13:06 +0100 (mar. 10 mars 2015) $
  *
  */
 
@@ -119,6 +119,7 @@ private:
 	bool				m_bHasDamagedFiles;
 	bool				m_bParQuick;
 	bool				m_bForceRepair;
+	bool				m_bParFull;
 
 	void				Cleanup();
 	EStatus				RunParCheckAll();
@@ -144,6 +145,7 @@ private:
 	bool				SmartCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, SegmentList* pSegments,
 							unsigned long* pDownloadCrc);
 	bool				DumbCalcFileRangeCrc(FILE* pFile, long long lStart, long long lEnd, unsigned long* pDownloadCrc);
+	void				CheckEmptyFiles();
 
 protected:
 	/**
@@ -176,6 +178,8 @@ public:
 	bool				GetParQuick() { return m_bParQuick; }
 	void				SetForceRepair(bool bForceRepair) { m_bForceRepair = bForceRepair; }
 	bool				GetForceRepair() { return m_bForceRepair; }
+	void				SetParFull(bool bParFull) { m_bParFull = bParFull; }
+	bool				GetParFull() { return m_bParFull; }
 	EStatus				GetStatus() { return m_eStatus; }
 	void				AddParFile(const char* szParFilename);
 	void				QueueChanged();

@@ -1,7 +1,7 @@
 /*!
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1062 $
- * $Date: 2014-07-19 02:06:28 +0200 (Sat, 19 Jul 2014) $
+ * $Revision: 1250 $
+ * $Date: 2015-03-31 21:52:57 +0200 (mar. 31 mars 2015) $
  *
  */
 
@@ -398,9 +398,42 @@ body.navfixed.scrolled .navbar-fixed-top .navbar-inner {
 	overflow: hidden;
 }
 
+#RssMenu table {
+	width: 100%;
+}
+
+#RssMenu table td:nth-child(2) {
+	text-align: right;
+	padding-left: 10px;
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+#RssMenu a .btn {
+	visibility: hidden;
+	height: 22px;
+	line-height: 12px;
+	font-size: 8pt;
+	padding: 2px 7px;
+	margin-top: -2px;
+	margin-bottom: -1px;
+}
+
+#RssMenu a:hover .btn {
+	visibility: visible;
+}
+
 #DownloadsEdit_ActionsMenu,
 #HistoryEdit_ActionsMenu {
 	min-width: 120px;
+}
+
+ul.dropdown-menu > li > a {
+	line-height: 20px;
+}
+
+ul.dropdown-menu > li > a.has-table {
+	line-height: 18px;
 }
 
 ul.dropdown-menu > li > a > i {
@@ -750,9 +783,27 @@ form {
 }
 
 #DownloadsEdit_FileTable_filter,
-#DownloadsEdit_LogTable_filter,
+#DownloadsEdit_LogTable_filter
+#HistoryEdit_LogTable_filter,
 #FeedDialog_ItemTable_filter {
 	width: 180px;
+}
+
+#DownloadsLogRecordsPerPageBlock,
+#HistoryLogRecordsPerPageBlock {
+	margin-bottom: 12px;
+}
+
+#DownloadsEdit_LogTable_filterBlock,
+#HistoryEdit_LogTable_filterBlock {
+	float: left;
+	margin-left: 20px;
+	margin-right: 20px;
+	margin-bottom: 12px;
+}
+
+.phone .modal-toolbox {
+	margin-bottom: 20px;
 }
 
 .loading-block {
@@ -1584,8 +1635,8 @@ div.control-group.last-group {
 	color: #005580;
 }
 
-.config-previewfeed {
-	margin-left: 15px;
+div.multiset-toolbar button {
+	margin-right: 15px;
 }
 
 #ScriptListDialog_ScriptTable td:nth-child(2) {

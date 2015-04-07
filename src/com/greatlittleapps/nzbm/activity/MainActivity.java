@@ -18,6 +18,7 @@ import com.greatlittleapps.nzbm.views.ServerView;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -38,7 +39,8 @@ public class MainActivity extends NZBMServiceActivity
 	private int launchCount;
 	private int launchCountTrigger = 10;
 	private boolean showAdds = true;
-	
+	private Paths paths;
+
 	@Override
     public void onCreate( Bundle savedInstanceState )
     {
@@ -47,12 +49,15 @@ public class MainActivity extends NZBMServiceActivity
 
 		serverView = (ServerView)this.findViewById(R.id.ServerView);
 		dialog = new UtilityMessage( MainActivity.this );
-		Paths.unrar = this.getFilesDir().getAbsolutePath();
-        if( new File( Paths.webui ).exists() 
-        		&& new File( Paths.unrar ).exists()
-        		&& new File ( Paths.config ).exists() )
+		paths = new Paths(MainActivity.this);
+
+        if( new File( paths.webui ).exists() 
+        		&& new File( paths.nzbget ).exists()
+        		&& new File ( paths.config ).exists() )
         {
-        	conf = new Config( Paths.config );
+        	conf = new Config( MainActivity.this);
+        	startService();
+        	/*
         	Utility.logVisible( "NZBM DATA VERSIONCODE: " + conf.getVersionCode() );
         	if( conf.getVersionCode() != 140 ) {
         		Utility.logVisible( "data not up to date !" );
@@ -60,13 +65,14 @@ public class MainActivity extends NZBMServiceActivity
         	} else {
         		startService();
         	}
+        	*/
         }
         else
         {
         	Utility.log( "missing webui directory or unrar binary..." );
         	extractData();
         }
-       
+    
         // IAP
         String base64EncodedPublicKey = 
         		"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkh1dlB0LPZ1zGXXnmbM3K5V8jZ58VBFDmkQX77gq/LycA1S2aCX74rA1I871ZIVfqfGbBMGMUB6QnOHzV7zZhxazl/Jj8PIPR3S4psJGZDeCnbAI5Fm93IULnhpdO7sgiH68Q0iFlYL2IZQfIGy+zqtgkKq4SUf26Ypx/LfPg199znqI5XOrxtwaFxqawYSQEBik101HIDeWiT2fmfF1i/KyCG57oJuu61J84bbnsbfwi4OCw1nDLChiLfNAcXvSlNuSEtwpNcrP4fQb7KgxUynoL5XOE2iGvSJAB/3vAOQP6zzlhh+1FnO4QTx8EIry+k/IuhXJTmFbwIsiOJtFFwIDAQAB";
@@ -143,7 +149,7 @@ public class MainActivity extends NZBMServiceActivity
 	
 	private void extractData()
     {
-		Utility.delete( new File( Paths.webui ) );
+		Utility.delete( new File( paths.webui ) );
 		
     	dialog.show( "Please wait while extracting data..." );
     	UtilityDecompressRaw d = new UtilityDecompressRaw( this )
@@ -155,7 +161,7 @@ public class MainActivity extends NZBMServiceActivity
     			if( success )
     			{
     				try {
-						chmod(new File(Paths.unrar+"/unrar"), 755);
+						chmod(new File(paths.unrar+"/unrar"), 755);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -165,7 +171,7 @@ public class MainActivity extends NZBMServiceActivity
     					@Override
     					public void run() 
     					{
-    						conf = new Config( Paths.config );
+    						conf = new Config(MainActivity.this);
     						startService();
     					}	
     				});
@@ -174,8 +180,9 @@ public class MainActivity extends NZBMServiceActivity
     				dialog.showMessageErrorExit( "Sorry, a fatal error occured while extracting data" );
     		}
     	};
-    	d.add( "webui", Paths.webui+"/" );
-    	d.add( "unrar", Paths.unrar+"/" );
+    	d.add( "webui", paths.webui+"/" );
+    	d.add( "unrar", paths.unrar+"/" );
+    	d.add( "nzbgetconf", paths.nzbget+"/" );
     	d.process();
     }
 	

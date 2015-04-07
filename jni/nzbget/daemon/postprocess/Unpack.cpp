@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1139 $
- * $Date: 2014-10-09 23:11:42 +0200 (Thu, 09 Oct 2014) $
+ * $Revision: 1231 $
+ * $Date: 2015-03-13 22:14:52 +0100 (ven. 13 mars 2015) $
  *
  */
 
@@ -72,6 +72,28 @@ bool UnpackController::FileList::Exists(const char* szFilename)
 	return false;
 }
 
+UnpackController::ParamList::~ParamList()
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		free(*it);
+	}
+}
+
+bool UnpackController::ParamList::Exists(const char* szParam)
+{
+	for (iterator it = begin(); it != end(); it++)
+	{
+		char* szParam1 = *it;
+		if (!strcmp(szParam1, szParam))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void UnpackController::StartJob(PostInfo* pPostInfo)
 {
 	UnpackController* pUnpackController = new UnpackController();
@@ -100,7 +122,14 @@ void UnpackController::Run()
 	m_szPassword[0] = '\0';
 	m_szFinalDir[0] = '\0';
 	m_bFinalDirCreated = false;
-	
+	m_bUnpackOK = true;
+	m_bUnpackStartError = false;
+	m_bUnpackSpaceError = false;
+	m_bUnpackDecryptError = false;
+	m_bUnpackPasswordError = false;
+	m_bAutoTerminated = false;
+	m_bPassListTried = false;
+
 	NZBParameter* pParameter = m_pPostInfo->GetNZBInfo()->GetParameters()->Find("*Unpack:", false);
 	bool bUnpack = !(pParameter && !strcasecmp(pParameter->GetValue(), "no"));
 
@@ -134,32 +163,32 @@ void UnpackController::Run()
 
 	bool bHasFiles = m_bHasRarFiles || m_bHasNonStdRarFiles || m_bHasSevenZipFiles || m_bHasSevenZipMultiFiles || m_bHasSplittedFiles;
 
-	if (bUnpack && bHasFiles)
+	if (m_pPostInfo->GetUnpackTried() && !m_pPostInfo->GetParRepaired() &&
+		(!Util::EmptyStr(m_szPassword) || Util::EmptyStr(g_pOptions->GetUnpackPassFile()) || m_pPostInfo->GetPassListTried()))
+	{
+		PrintMessage(Message::mkError, "%s failed: second unpack attempt skipped due to par-check not repaired anything", m_szInfoNameUp);
+		m_pPostInfo->GetNZBInfo()->SetUnpackStatus((NZBInfo::EUnpackStatus)m_pPostInfo->GetLastUnpackStatus());
+		m_pPostInfo->SetStage(PostInfo::ptQueued);
+	}
+	else if (bUnpack && bHasFiles)
 	{
 		PrintMessage(Message::mkInfo, "Unpacking %s", m_szName);
 
 		CreateUnpackDir();
 
-		m_bUnpackOK = true;
-		m_bUnpackStartError = false;
-		m_bUnpackSpaceError = false;
-		m_bUnpackPasswordError4 = false;
-		m_bUnpackPasswordError5 = false;
-		m_bAutoTerminated = false;
-
 		if (m_bHasRarFiles || m_bHasNonStdRarFiles)
 		{
-			ExecuteUnrar();
+			UnpackArchives(upUnrar, false);
 		}
 
 		if (m_bHasSevenZipFiles && m_bUnpackOK)
 		{
-			ExecuteSevenZip(false);
+			UnpackArchives(upSevenZip, false);
 		}
 
 		if (m_bHasSevenZipMultiFiles && m_bUnpackOK)
 		{
-			ExecuteSevenZip(true);
+			UnpackArchives(upSevenZip, true);
 		}
 
 		if (m_bHasSplittedFiles && m_bUnpackOK)
@@ -195,30 +224,126 @@ void UnpackController::Run()
 	m_pPostInfo->SetWorking(false);
 }
 
-void UnpackController::ExecuteUnrar()
+void UnpackController::UnpackArchives(EUnpacker eUnpacker, bool bMultiVolumes)
+{
+	if (!m_pPostInfo->GetUnpackTried() || m_pPostInfo->GetParRepaired())
+	{
+		ExecuteUnpack(eUnpacker, m_szPassword, bMultiVolumes);
+		if (!m_bUnpackOK && m_bHasParFiles && !m_bUnpackPasswordError &&
+			m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
+		{
+			// for rar4- or 7z-archives try par-check first, before trying password file
+			return;
+		}
+	}
+	else
+	{
+		m_bUnpackOK = false;
+		m_bUnpackDecryptError = m_pPostInfo->GetLastUnpackStatus() == (int)NZBInfo::usPassword;
+	}
+
+	if (!m_bUnpackOK && !m_bUnpackStartError && !m_bUnpackSpaceError &&
+		(m_bUnpackDecryptError || m_bUnpackPasswordError) &&
+		(!GetTerminated() || m_bAutoTerminated) &&
+		Util::EmptyStr(m_szPassword) && !Util::EmptyStr(g_pOptions->GetUnpackPassFile()))
+	{
+		FILE* infile = fopen(g_pOptions->GetUnpackPassFile(), FOPEN_RB);
+		if (!infile)
+		{
+			PrintMessage(Message::mkError, "Could not open file %s", g_pOptions->GetUnpackPassFile());
+			return;
+		}
+
+		char szPassword[512];
+		while (!m_bUnpackOK && !m_bUnpackStartError && !m_bUnpackSpaceError &&
+			(m_bUnpackDecryptError || m_bUnpackPasswordError) &&
+			fgets(szPassword, sizeof(szPassword) - 1, infile))
+		{
+			// trim trailing <CR> and <LF>
+			char* szEnd = szPassword + strlen(szPassword) - 1;
+			while (szEnd >= szPassword && (*szEnd == '\n' || *szEnd == '\r')) *szEnd-- = '\0';
+
+			if (!Util::EmptyStr(szPassword))
+			{
+				if (IsStopped() && m_bAutoTerminated)
+				{
+					ScriptController::Resume();
+					Thread::Resume();
+				}
+				m_bUnpackDecryptError = false;
+				m_bUnpackPasswordError = false;
+				m_bAutoTerminated = false;
+				PrintMessage(Message::mkInfo, "Trying password %s for %s", szPassword, m_szName);
+				ExecuteUnpack(eUnpacker, szPassword, bMultiVolumes);
+			}
+		}
+
+		fclose(infile);
+		m_bPassListTried = !IsStopped() || m_bAutoTerminated;
+	}
+}
+
+void UnpackController::ExecuteUnpack(EUnpacker eUnpacker, const char* szPassword, bool bMultiVolumes)
+{
+	switch (eUnpacker)
+	{
+		case upUnrar:
+			ExecuteUnrar(szPassword);
+			break;
+
+		case upSevenZip:
+			ExecuteSevenZip(szPassword, bMultiVolumes);
+			break;
+	}
+}
+
+void UnpackController::ExecuteUnrar(const char* szPassword)
 {
 	// Format: 
-	//   unrar x -y -p- -o+ *.rar ./_unpack
+	//   unrar x -y -p- -o+ *.rar ./_unpack/
 
-	char szPasswordParam[1024];
-	const char* szArgs[8];
-	szArgs[0] = g_pOptions->GetUnrarCmd();
-	szArgs[1] = "x";
-	szArgs[2] = "-y";
-	szArgs[3] = "-p-";
-	if (strlen(m_szPassword) > 0)
+	ParamList params;
+	if (!PrepareCmdParams(g_pOptions->GetUnrarCmd(), &params, "unrar"))
 	{
-		snprintf(szPasswordParam, 1024, "-p%s", m_szPassword);
-		szArgs[3] = szPasswordParam;
+		return;
 	}
-	szArgs[4] = "-o+";
-	szArgs[5] = m_bHasNonStdRarFiles ? "*.*" : "*.rar";
-	szArgs[6] = m_szUnpackDir;
-	szArgs[7] = NULL;
-	SetArgs(szArgs, false);
 
-	SetScript(g_pOptions->GetUnrarCmd());
+	if (!params.Exists("x") && !params.Exists("e"))
+	{
+		params.push_back(strdup("x"));
+	}
+
+	params.push_back(strdup("-y"));
+
+	if (!Util::EmptyStr(szPassword))
+	{
+		char szPasswordParam[1024];
+		snprintf(szPasswordParam, 1024, "-p%s", szPassword);
+		szPasswordParam[1024-1] = '\0';
+		params.push_back(strdup(szPasswordParam));
+	}
+	else
+	{
+		params.push_back(strdup("-p-"));
+	}
+
+	if (!params.Exists("-o+") && !params.Exists("-o-"))
+	{
+		params.push_back(strdup("-o+"));
+	}
+
+	params.push_back(strdup(m_bHasNonStdRarFiles ? "*.*" : "*.rar"));
+
+	char szUnpackDirParam[1024];
+	snprintf(szUnpackDirParam, 1024, "%s%c", m_szUnpackDir, PATH_SEPARATOR);
+	szUnpackDirParam[1024-1] = '\0';
+	params.push_back(strdup(szUnpackDirParam));
+
+	params.push_back(NULL);
+	SetArgs((const char**)&params.front(), false);
+	SetScript(params.at(0));
 	SetLogPrefix("Unrar");
+	ResetEnv();
 
 	m_bAllOKMessageReceived = false;
 	m_eUnpacker = upUnrar;
@@ -231,7 +356,7 @@ void UnpackController::ExecuteUnrar()
 	m_bUnpackOK = iExitCode == 0 && m_bAllOKMessageReceived && !GetTerminated();
 	m_bUnpackStartError = iExitCode == -1;
 	m_bUnpackSpaceError = iExitCode == 5;
-	m_bUnpackPasswordError5 |= iExitCode == 11; // only for rar5-archives
+	m_bUnpackPasswordError |= iExitCode == 11; // only for rar5-archives
 
 	if (!m_bUnpackOK && iExitCode > 0)
 	{
@@ -239,35 +364,49 @@ void UnpackController::ExecuteUnrar()
 	}
 }
 
-void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
+void UnpackController::ExecuteSevenZip(const char* szPassword, bool bMultiVolumes)
 {
 	// Format: 
 	//   7z x -y -p- -o./_unpack *.7z
 	// OR
 	//   7z x -y -p- -o./_unpack *.7z.001
 
-	char szPasswordParam[1024];
-	const char* szArgs[7];
-	szArgs[0] = g_pOptions->GetSevenZipCmd();
-	szArgs[1] = "x";
-	szArgs[2] = "-y";
-
-	szArgs[3] = "-p-";
-	if (strlen(m_szPassword) > 0)
+	ParamList params;
+	if (!PrepareCmdParams(g_pOptions->GetSevenZipCmd(), &params, "7-Zip"))
 	{
-		snprintf(szPasswordParam, 1024, "-p%s", m_szPassword);
-		szArgs[3] = szPasswordParam;
+		return;
+	}
+
+	if (!params.Exists("x") && !params.Exists("e"))
+	{
+		params.push_back(strdup("x"));
+	}
+
+	params.push_back(strdup("-y"));
+
+	if (!Util::EmptyStr(szPassword))
+	{
+		char szPasswordParam[1024];
+		snprintf(szPasswordParam, 1024, "-p%s", szPassword);
+		szPasswordParam[1024-1] = '\0';
+		params.push_back(strdup(szPasswordParam));
+	}
+	else
+	{
+		params.push_back(strdup("-p-"));
 	}
 
 	char szUnpackDirParam[1024];
 	snprintf(szUnpackDirParam, 1024, "-o%s", m_szUnpackDir);
-	szArgs[4] = szUnpackDirParam;
+	szUnpackDirParam[1024-1] = '\0';
+	params.push_back(strdup(szUnpackDirParam));
 
-	szArgs[5] = bMultiVolumes ? "*.7z.001" : "*.7z";
-	szArgs[6] = NULL;
-	SetArgs(szArgs, false);
+	params.push_back(strdup(bMultiVolumes ? "*.7z.001" : "*.7z"));
 
-	SetScript(g_pOptions->GetSevenZipCmd());
+	params.push_back(NULL);
+	SetArgs((const char**)&params.front(), false);
+	SetScript(params.at(0));
+	ResetEnv();
 
 	m_bAllOKMessageReceived = false;
 	m_eUnpacker = upSevenZip;
@@ -286,6 +425,32 @@ void UnpackController::ExecuteSevenZip(bool bMultiVolumes)
 	{
 		PrintMessage(Message::mkError, "7-Zip error code: %i", iExitCode);
 	}
+}
+
+bool UnpackController::PrepareCmdParams(const char* szCommand, ParamList* pParams, const char* szInfoName)
+{
+	if (Util::FileExists(szCommand))
+	{
+		pParams->push_back(strdup(szCommand));
+		return true;
+	}
+
+	char** pCmdArgs = NULL;
+	if (!Util::SplitCommandLine(szCommand, &pCmdArgs))
+	{
+		PrintMessage(Message::mkError, "Could not start %s, failed to parse command line: %s", szInfoName, szCommand);
+		m_bUnpackOK = false;
+		m_bUnpackStartError = true;
+		return false;
+	}
+
+	for (char** szArgPtr = pCmdArgs; *szArgPtr; szArgPtr++)
+	{
+		pParams->push_back(*szArgPtr);
+	}
+	free(pCmdArgs);
+
+	return true;
 }
 
 void UnpackController::JoinSplittedFiles()
@@ -397,7 +562,7 @@ bool UnpackController::JoinFile(const char* szFragBaseName)
 	FILE* pOutFile = fopen(szDestFilename, FOPEN_WBP);
 	if (!pOutFile)
 	{
-		error("Could not create file %s: %s", szDestFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+		PrintMessage(Message::mkError, "Could not create file %s: %s", szDestFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 		return false;
 	}
 	if (g_pOptions->GetWriteBuffer() > 0)
@@ -449,7 +614,7 @@ bool UnpackController::JoinFile(const char* szFragBaseName)
 		}
 		else
 		{
-			error("Could not open file %s", szFragFilename);
+			PrintMessage(Message::mkError, "Could not open file %s", szFragFilename);
 			bOK = false;
 			break;
 		}
@@ -483,11 +648,13 @@ void UnpackController::Completed()
 		if (!m_bUnpackOK && 
 			(m_pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped ||
 			 !m_pPostInfo->GetNZBInfo()->GetParFull()) &&
-			!m_bUnpackStartError && !m_bUnpackSpaceError &&
-			(!m_bUnpackPasswordError5 || m_bUnpackPasswordError4) &&
+			!m_bUnpackStartError && !m_bUnpackSpaceError && !m_bUnpackPasswordError &&
 			(!GetTerminated() || m_bAutoTerminated) && m_bHasParFiles)
 		{
-			RequestParCheck(true);
+			RequestParCheck(!Util::EmptyStr(m_szPassword) ||
+				Util::EmptyStr(g_pOptions->GetUnpackPassFile()) || m_bPassListTried ||
+				!(m_bUnpackDecryptError || m_bUnpackPasswordError) ||
+				m_pPostInfo->GetNZBInfo()->GetParStatus() > NZBInfo::psSkipped);
 		}
 		else
 #endif
@@ -495,8 +662,7 @@ void UnpackController::Completed()
 			PrintMessage(Message::mkError, "%s failed", m_szInfoNameUp);
 			m_pPostInfo->GetNZBInfo()->SetUnpackStatus(
 				m_bUnpackSpaceError ? NZBInfo::usSpace :
-				m_bUnpackPasswordError5 || (m_bUnpackPasswordError4 && 
-					m_pPostInfo->GetNZBInfo()->GetParStatus() == NZBInfo::psSuccess) ? NZBInfo::usPassword :
+				m_bUnpackPasswordError || m_bUnpackDecryptError ? NZBInfo::usPassword :
 				NZBInfo::usFailure);
 			m_pPostInfo->SetStage(PostInfo::ptQueued);
 		}
@@ -506,10 +672,15 @@ void UnpackController::Completed()
 #ifndef DISABLE_PARCHECK
 void UnpackController::RequestParCheck(bool bForceRepair)
 {
-	PrintMessage(Message::mkInfo, "%s requested par-check/repair", m_szInfoNameUp);
+	PrintMessage(Message::mkInfo, "%s requested %s", m_szInfoNameUp, bForceRepair ? "par-check with forced repair" : "par-check/repair");
 	m_pPostInfo->SetRequestParCheck(true);
 	m_pPostInfo->SetForceRepair(bForceRepair);
 	m_pPostInfo->SetStage(PostInfo::ptFinished);
+	m_pPostInfo->SetUnpackTried(true);
+	m_pPostInfo->SetPassListTried(m_bPassListTried);
+	m_pPostInfo->SetLastUnpackStatus((int)(m_bUnpackSpaceError ? NZBInfo::usSpace :
+		m_bUnpackPasswordError || m_bUnpackDecryptError ? NZBInfo::usPassword :
+		NZBInfo::usFailure));
 }
 #endif
 
@@ -533,7 +704,7 @@ void UnpackController::CreateUnpackDir()
 	char szErrBuf[1024];
 	if (!Util::ForceDirectories(m_szUnpackDir, szErrBuf, sizeof(szErrBuf)))
 	{
-		error("Could not create directory %s: %s", m_szUnpackDir, szErrBuf);
+		PrintMessage(Message::mkError, "Could not create directory %s: %s", m_szUnpackDir, szErrBuf);
 	}
 }
 
@@ -631,8 +802,7 @@ bool UnpackController::Cleanup()
 		DirBrowser dir(m_szUnpackDir);
 		while (const char* filename = dir.Next())
 		{
-			if (strcmp(filename, ".") && strcmp(filename, "..") &&
-				strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store"))
+			if (strcmp(filename, ".") && strcmp(filename, ".."))
 			{
 				char szSrcFile[1024];
 				snprintf(szSrcFile, 1024, "%s%c%s", m_szUnpackDir, PATH_SEPARATOR, filename);
@@ -645,10 +815,13 @@ bool UnpackController::Cleanup()
 				// silently overwrite existing files
 				remove(szDstFile);
 
-				if (!Util::MoveFile(szSrcFile, szDstFile))
+				bool bHiddenFile = filename[0] == '.';
+
+				if (!Util::MoveFile(szSrcFile, szDstFile) && !bHiddenFile)
 				{
 					char szErrBuf[256];
-					PrintMessage(Message::mkError, "Could not move file %s to %s: %s", szSrcFile, szDstFile, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+					PrintMessage(Message::mkError, "Could not move file %s to %s: %s", szSrcFile, szDstFile,
+						Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 					bOK = false;
 				}
 
@@ -779,6 +952,7 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 	char szMsgText[1024];
 	strncpy(szMsgText, szText, 1024);
 	szMsgText[1024-1] = '\0';
+	int iLen = strlen(szText);
 	
 	// Modify unrar messages for better readability:
 	// remove the destination path part from message "Extracting file.xxx"
@@ -789,8 +963,7 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 		szMsgText[1024-1] = '\0';
 	}
 
-	ScriptController::AddMessage(eKind, szMsgText);
-	m_pPostInfo->AppendMessage(eKind, szMsgText);
+	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szMsgText);
 
 	if (m_eUnpacker == upUnrar && !strncmp(szMsgText, "Unrar: UNRAR ", 6) &&
 		strstr(szMsgText, " Copyright ") && strstr(szMsgText, " Alexander Roshal"))
@@ -816,16 +989,21 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 		(!strncmp(szText, "Unrar: Checksum error in the encrypted file", 42) ||
 		 !strncmp(szText, "Unrar: CRC failed in the encrypted file", 39)))
 	{
-		m_bUnpackPasswordError4 = true;
+		m_bUnpackDecryptError = true;
 	}
 
 	if (m_eUnpacker == upUnrar && !strncmp(szText, "Unrar: The specified password is incorrect.'", 43))
 	{
-		m_bUnpackPasswordError5 = true;
+		m_bUnpackPasswordError = true;
 	}
 
-	int iLen = strlen(szText);
-	if (m_eUnpacker == upUnrar && !IsStopped() && (m_bUnpackPasswordError4 || m_bUnpackPasswordError5 ||
+	if (m_eUnpacker == upSevenZip &&
+		(iLen > 18 && !strncmp(szText + iLen - 45, "Data Error in encrypted file. Wrong password?", 45)))
+	{
+		m_bUnpackDecryptError = true;
+	}
+
+	if (!IsStopped() && (m_bUnpackDecryptError || m_bUnpackPasswordError ||
 		strstr(szText, " : packed data CRC failed in volume") ||
 		strstr(szText, " : packed data checksum error in volume") ||
 		(iLen > 13 && !strncmp(szText + iLen - 13, " - CRC failed", 13)) ||
@@ -835,8 +1013,7 @@ void UnpackController::AddMessage(Message::EKind eKind, const char* szText)
 		char szMsgText[1024];
 		snprintf(szMsgText, 1024, "Cancelling %s due to errors", m_szInfoName);
 		szMsgText[1024-1] = '\0';
-		ScriptController::AddMessage(Message::mkWarning, szMsgText);
-		m_pPostInfo->AppendMessage(Message::mkWarning, szMsgText);
+		m_pPostInfo->GetNZBInfo()->AddMessage(Message::mkWarning, szMsgText);
 		m_bAutoTerminated = true;
 		Stop();
 	}
@@ -896,7 +1073,7 @@ void MoveController::Run()
 
 	DownloadQueue::Unlock();
 
-	info("Moving completed files for %s", szNZBName);
+	PrintMessage(Message::mkInfo, "Moving completed files for %s", szNZBName);
 
 	bool bOK = MoveFiles();
 
@@ -904,7 +1081,7 @@ void MoveController::Run()
 
 	if (bOK)
 	{
-		info("%s successful", szInfoName);
+		PrintMessage(Message::mkInfo, "%s successful", szInfoName);
 		// save new dest dir
 		DownloadQueue::Lock();
 		m_pPostInfo->GetNZBInfo()->SetDestDir(m_szDestDir);
@@ -913,7 +1090,7 @@ void MoveController::Run()
 	}
 	else
 	{
-		error("%s failed", szInfoName);
+		PrintMessage(Message::mkError, "%s failed", szInfoName);
 		m_pPostInfo->GetNZBInfo()->SetMoveStatus(NZBInfo::msFailure);
 	}
 
@@ -926,7 +1103,7 @@ bool MoveController::MoveFiles()
 	char szErrBuf[1024];
 	if (!Util::ForceDirectories(m_szDestDir, szErrBuf, sizeof(szErrBuf)))
 	{
-		error("Could not create directory %s: %s", m_szDestDir, szErrBuf);
+		PrintMessage(Message::mkError, "Could not create directory %s: %s", m_szDestDir, szErrBuf);
 		return false;
 	}
 
@@ -934,8 +1111,7 @@ bool MoveController::MoveFiles()
 	DirBrowser dir(m_szInterDir);
 	while (const char* filename = dir.Next())
 	{
-		if (strcmp(filename, ".") && strcmp(filename, "..") &&
-			strcmp(filename, ".AppleDouble") && strcmp(filename, ".DS_Store"))
+		if (strcmp(filename, ".") && strcmp(filename, ".."))
 		{
 			char szSrcFile[1024];
 			snprintf(szSrcFile, 1024, "%s%c%s", m_szInterDir, PATH_SEPARATOR, filename);
@@ -944,10 +1120,18 @@ bool MoveController::MoveFiles()
 			char szDstFile[1024];
 			Util::MakeUniqueFilename(szDstFile, 1024, m_szDestDir, filename);
 
-			PrintMessage(Message::mkInfo, "Moving file %s to %s", Util::BaseFileName(szSrcFile), m_szDestDir);
-			if (!Util::MoveFile(szSrcFile, szDstFile))
+			bool bHiddenFile = filename[0] == '.';
+
+			if (!bHiddenFile)
 			{
-				PrintMessage(Message::mkError, "Could not move file %s to %s: %s", szSrcFile, szDstFile, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+				PrintMessage(Message::mkInfo, "Moving file %s to %s", Util::BaseFileName(szSrcFile), m_szDestDir);
+			}
+
+			if (!Util::MoveFile(szSrcFile, szDstFile) && !bHiddenFile)
+			{
+				char szErrBuf[256];
+				PrintMessage(Message::mkError, "Could not move file %s to %s: %s", szSrcFile, szDstFile,
+					Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 				bOK = false;
 			}
 		}
@@ -955,12 +1139,16 @@ bool MoveController::MoveFiles()
 
 	if (bOK && !Util::DeleteDirectoryWithContent(m_szInterDir, szErrBuf, sizeof(szErrBuf)))
 	{
-		PrintMessage(Message::mkError, "Could not delete intermediate directory %s: %s", m_szInterDir, szErrBuf);
+		PrintMessage(Message::mkWarning, "Could not delete intermediate directory %s: %s", m_szInterDir, szErrBuf);
 	}
 
 	return bOK;
 }
 
+void MoveController::AddMessage(Message::EKind eKind, const char* szText)
+{
+	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
+}
 
 void CleanupController::StartJob(PostInfo* pPostInfo)
 {
@@ -1004,7 +1192,7 @@ void CleanupController::Run()
 
 	DownloadQueue::Unlock();
 
-	info("Cleaning up %s", szNZBName);
+	PrintMessage(Message::mkInfo, "Cleaning up %s", szNZBName);
 
 	bool bDeleted = false;
 	bool bOK = Cleanup(m_szDestDir, &bDeleted);
@@ -1020,17 +1208,17 @@ void CleanupController::Run()
 
 	if (bOK && bDeleted)
 	{
-		info("%s successful", szInfoName);
+		PrintMessage(Message::mkInfo, "%s successful", szInfoName);
 		m_pPostInfo->GetNZBInfo()->SetCleanupStatus(NZBInfo::csSuccess);
 	}
 	else if (bOK)
 	{
-		info("Nothing to cleanup for %s", szNZBName);
+		PrintMessage(Message::mkInfo, "Nothing to cleanup for %s", szNZBName);
 		m_pPostInfo->GetNZBInfo()->SetCleanupStatus(NZBInfo::csSuccess);
 	}
 	else
 	{
-		error("%s failed", szInfoName);
+		PrintMessage(Message::mkError, "%s failed", szInfoName);
 		m_pPostInfo->GetNZBInfo()->SetCleanupStatus(NZBInfo::csFailure);
 	}
 
@@ -1046,15 +1234,22 @@ bool CleanupController::Cleanup(const char* szDestDir, bool *bDeleted)
 	DirBrowser dir(szDestDir);
 	while (const char* filename = dir.Next())
 	{
+		char szFullFilename[1024];
+		snprintf(szFullFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, filename);
+		szFullFilename[1024-1] = '\0';
+
+		bool bIsDir = Util::DirectoryExists(szFullFilename);
+
+		if (strcmp(filename, ".") && strcmp(filename, "..") && bIsDir)
+		{
+			bOK &= Cleanup(szFullFilename, bDeleted);
+		}
+
 		// check file extension
-		bool bDeleteIt = Util::MatchFileExt(filename, g_pOptions->GetExtCleanupDisk(), ",;");
+		bool bDeleteIt = Util::MatchFileExt(filename, g_pOptions->GetExtCleanupDisk(), ",;") && !bIsDir;
 
 		if (bDeleteIt)
 		{
-			char szFullFilename[1024];
-			snprintf(szFullFilename, 1024, "%s%c%s", szDestDir, PATH_SEPARATOR, filename);
-			szFullFilename[1024-1] = '\0';
-
 			PrintMessage(Message::mkInfo, "Deleting file %s", filename);
 			if (remove(szFullFilename) != 0)
 			{
@@ -1068,4 +1263,9 @@ bool CleanupController::Cleanup(const char* szDestDir, bool *bDeleted)
 	}
 
 	return bOK;
+}
+
+void CleanupController::AddMessage(Message::EKind eKind, const char* szText)
+{
+	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
 }

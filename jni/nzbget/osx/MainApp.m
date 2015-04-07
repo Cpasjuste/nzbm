@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 930 $
- * $Date: 2014-01-02 22:06:03 +0100 (Thu, 02 Jan 2014) $
+ * $Revision: 1160 $
+ * $Date: 2014-11-16 17:24:06 +0100 (dim. 16 nov. 2014) $
  *
  */
 
@@ -149,8 +149,9 @@ void InstallSignalHandlers()
 			statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSSquareStatusItemLength];
 			[statusItem setHighlightMode:YES];
 			[statusItem setMenu:statusMenu];
-			[statusItem setImage:[NSImage imageNamed:@"statusicon.png"]];
-			[statusItem setAlternateImage:[NSImage imageNamed:@"statusicon-inv.png"]];
+			NSImage* icon = [NSImage imageNamed:@"statusicon.png"];
+			[icon setTemplate:YES];
+			[statusItem setImage:icon];
 		}
 		else {
 			statusItem = nil;
@@ -451,7 +452,8 @@ void InstallSignalHandlers()
 	
 	NSString* info1 = @"";
 	NSString* info2 = nil;
-	
+	BOOL preventSleep = NO;
+
 	NSDictionary* status = [daemonController status];
 	if (restarting || daemonController.restarting) {
 		info1 = NSLocalizedString(@"Status.Restarting", nil);
@@ -460,6 +462,7 @@ void InstallSignalHandlers()
 	} else if ([(NSNumber*)[status objectForKey:@"ServerStandBy"] integerValue] == 1) {
 		if ([(NSNumber*)[status objectForKey:@"PostJobCount"] integerValue] > 0) {
 			info1 = NSLocalizedString(@"Status.Post-Processing", nil);
+			preventSleep = YES;
 		}
 		else if ([(NSNumber*)[status objectForKey:@"UrlCount"] integerValue] > 0) {
 			info1 = NSLocalizedString(@"Status.Fetching NZBs", nil);
@@ -476,20 +479,38 @@ void InstallSignalHandlers()
 	} else {
 		int speed = [(NSNumber*)[status objectForKey:@"DownloadRate"] integerValue];
 		info1 = [NSString stringWithFormat:NSLocalizedString(@"Status.Downloading", nil), speed / 1024];
-		
-		 if (speed > 0) {
-		 long long remaining = ([(NSNumber*)[status objectForKey:@"RemainingSizeHi"] integerValue] << 32) + [(NSNumber*)[status objectForKey:@"RemainingSizeLo"] integerValue];
-		 int secondsLeft = remaining / speed;
-		 info2 = [NSString stringWithFormat:NSLocalizedString(@"Status.Left", nil), [self formatTimeLeft:secondsLeft]];
-		 }
+		preventSleep = YES;
+
+		if (speed > 0) {
+			long long remaining = ([(NSNumber*)[status objectForKey:@"RemainingSizeHi"] integerValue] << 32) + [(NSNumber*)[status objectForKey:@"RemainingSizeLo"] integerValue];
+			int secondsLeft = remaining / speed;
+			info2 = [NSString stringWithFormat:NSLocalizedString(@"Status.Left", nil), [self formatTimeLeft:secondsLeft]];
+		}
 	}
-	
+
+	if (preventSleep != preventingSleep) {
+		[self updateSleepState:preventSleep];
+	}
+
 	[info1Item setTitle:info1];
 	
 	[info2Item setHidden:info2 == nil];
 	if (info2 != nil) {
 		[info2Item setTitle:info2];
 	}
+}
+
+- (void)updateSleepState:(BOOL)preventSleep {
+	if (preventSleep) {
+		sleepID = 0;
+		NSString* reason = NSLocalizedString(@"Status.PreventSleep", nil);
+		IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleSystemSleep,
+			kIOPMAssertionLevelOn, (__bridge CFStringRef)reason, &sleepID);
+	}
+	else if (sleepID != 0) {
+		IOPMAssertionRelease(sleepID);
+	}
+	preventingSleep = preventSleep;
 }
 
 - (NSString*)formatTimeLeft:(int)sec {

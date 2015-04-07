@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1139 $
- * $Date: 2014-10-09 23:11:42 +0200 (Thu, 09 Oct 2014) $
+ * $Revision: 1229 $
+ * $Date: 2015-03-10 23:13:06 +0100 (mar. 10 mars 2015) $
  *
  */
 
@@ -192,7 +192,9 @@ bool Repairer::ScanDataFile(DiskFile *diskfile, Par2RepairerSourceFile* &sourcef
 		{
 			sig_done(name, iAvailableBlocks, sourcefile->BlockCount());
 			sig_progress(1000.0);
-			matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch : ParChecker::fsPartial ? ePartialMatch : eNoMatch;
+			matchtype = eFileStatus == ParChecker::fsSuccess ? eFullMatch :
+				eFileStatus == ParChecker::fsPartial ? ePartialMatch : eNoMatch;
+			m_pOwner->SetParFull(false);
 			return true;
 		}
 	}
@@ -414,6 +416,7 @@ ParChecker::ParChecker()
 	m_eStage = ptLoadingPars;
 	m_bParQuick = false;
 	m_bForceRepair = false;
+	m_bParFull = false;
 }
 
 ParChecker::~ParChecker()
@@ -494,6 +497,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 
 	EStatus eAllStatus = psRepairNotNeeded;
 	m_bCancelled = false;
+	m_bParFull = true;
 
 	for (ParCoordinator::ParFileList::iterator it = fileList.begin(); it != fileList.end(); it++)
 	{
@@ -527,7 +531,7 @@ ParChecker::EStatus ParChecker::RunParCheckAll()
 				eAllStatus = eStatus;
 			}
 
-			if (g_pOptions->GetCreateBrokenLog())
+			if (g_pOptions->GetBrokenLog())
 			{
 				WriteBrokenLog(eStatus);
 			}
@@ -571,6 +575,11 @@ ParChecker::EStatus ParChecker::RunParCheck(const char* szParFilename)
 	Repairer* pRepairer = (Repairer*)m_pRepairer;
 	res = pRepairer->Process(false);
     debug("ParChecker: Process-result=%i", res);
+
+	if (!m_bParQuick)
+	{
+		CheckEmptyFiles();
+	}
 
 	bool bAddedSplittedFragments = false;
 	if (m_bHasDamagedFiles && !IsStopped() && res == eRepairNotPossible)
@@ -957,7 +966,7 @@ bool ParChecker::AddSplittedFragments()
 	{
 		m_iExtraFiles += extrafiles.size();
 		m_bVerifyingExtraFiles = true;
-		info("Found %i splitted fragments for %s", (int)extrafiles.size(), m_szInfoName);
+		PrintMessage(Message::mkInfo, "Found %i splitted fragments for %s", (int)extrafiles.size(), m_szInfoName);
 		bFragmentsAdded = ((Repairer*)m_pRepairer)->VerifyExtraFiles(extrafiles);
 		((Repairer*)m_pRepairer)->UpdateVerificationResults();
 		m_bVerifyingExtraFiles = false;
@@ -1027,7 +1036,7 @@ bool ParChecker::AddMissingFiles()
 			bool bAdded = iWasMissing > (int)((Repairer*)m_pRepairer)->missingfilecount;
 			if (bAdded)
 			{
-				info("Found missing file %s", Util::BaseFileName(pExtraFile->FileName().c_str()));
+				PrintMessage(Message::mkInfo, "Found missing file %s", Util::BaseFileName(pExtraFile->FileName().c_str()));
 				RegisterParredFile(Util::BaseFileName(pExtraFile->FileName().c_str()));
 			}
 
@@ -1185,6 +1194,39 @@ void ParChecker::signal_done(std::string str, int available, int total)
 	}
 }
 
+/*
+ * Only if ParQuick isn't enabled:
+ * For empty damaged files the callback-function "signal_done" isn't called and the flag "m_bHasDamagedFiles"
+ * therefore isn't set. In this function we expicitly check such files.
+ */
+void ParChecker::CheckEmptyFiles()
+{
+	for (std::vector<Par2RepairerSourceFile*>::iterator it = ((Repairer*)m_pRepairer)->sourcefiles.begin();
+		 it != ((Repairer*)m_pRepairer)->sourcefiles.end(); it++)
+	{
+		Par2RepairerSourceFile *sourcefile = *it;
+
+		if (sourcefile && sourcefile->GetDescriptionPacket())
+		{
+			const char* szFilename = sourcefile->GetDescriptionPacket()->FileName().c_str();
+			if (!IsProcessedFile(szFilename))
+			{
+				bool bIgnore = Util::MatchFileExt(szFilename, g_pOptions->GetParIgnoreExt(), ",;") ||
+					Util::MatchFileExt(szFilename, g_pOptions->GetExtCleanupDisk(), ",;");
+				m_bHasDamagedFiles |= !bIgnore;
+
+				int total = sourcefile->GetVerificationPacket() ? sourcefile->GetVerificationPacket()->BlockCount() : 0;
+				PrintMessage(Message::mkWarning, "File %s has %i bad block(s) of total %i block(s)%s",
+					szFilename, total, total, bIgnore ? ", ignoring" : "");
+			}
+		}
+		else
+		{
+			m_bHasDamagedFiles = true;
+		}
+	}
+}
+
 void ParChecker::Cancel()
 {
 	((Repairer*)m_pRepairer)->cancelled = true;
@@ -1294,7 +1336,7 @@ void ParChecker::DeleteLeftovers()
  *   download with CRC stored in PAR2-file;
  * - for partially downloaded files the CRCs of articles are compared with block-CRCs stored
  *   in PAR2-file;
- * - for completely failed files (not a single successful artice) no verification is needed at all.
+ * - for completely failed files (not a single successful article) no verification is needed at all.
  *
  * Limitation of the function:
  * This function requires every block in the file to have an unique CRC (across all blocks
@@ -1396,7 +1438,9 @@ bool ParChecker::VerifySuccessDataFile(void* pDiskfile, void* pSourcefile, unsig
 
 	// extend lDownloadCrc to block size
 	lDownloadCrc = CRCUpdateBlock(lDownloadCrc ^ 0xFFFFFFFF,
-		(size_t)(blocksize * packet->BlockCount() - pSourceFile->GetTargetFile()->FileSize())) ^ 0xFFFFFFFF;
+		(size_t)(blocksize * packet->BlockCount() > pSourceFile->GetTargetFile()->FileSize() ?
+			blocksize * packet->BlockCount() - pSourceFile->GetTargetFile()->FileSize() : 0)
+		) ^ 0xFFFFFFFF;
 	debug("Download-CRC: %.8x", lDownloadCrc);
 
 	// compute file CRC using CRCs of blocks
@@ -1461,7 +1505,8 @@ bool ParChecker::VerifyPartialDataFile(void* pDiskfile, void* pSourcefile, Segme
 	FILE* infile = fopen(szFilename, FOPEN_RB);
 	if (!infile)
 	{
-		error("Could not open file %s: %s", szFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
+		PrintMessage(Message::mkError, "Could not open file %s: %s",
+			szFilename, Util::GetLastErrorMessage(szErrBuf, sizeof(szErrBuf)));
 	}
 
 	// For each sequential range of presumably valid blocks:

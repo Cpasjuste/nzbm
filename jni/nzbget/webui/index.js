@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 973 $
- * $Date: 2014-04-01 23:06:31 +0200 (Tue, 01 Apr 2014) $
+ * $Revision: 1236 $
+ * $Date: 2015-03-20 21:02:44 +0100 (ven. 20 mars 2015) $
  *
  */
 
@@ -58,6 +58,9 @@ var UISettings = (new function($)
 
 	// Show badges with duplicate info (downloads and history).
 	this.dupeBadges = false;
+	
+	// Select records by clicking on any part of the row, not just on the check mark.
+	this.rowSelect = false;
 
 	// Time zone correction in hours.
 	// You shouldn't require this unless you can't set the time zone on your computer/device properly.
@@ -199,6 +202,8 @@ var Frontend = (new function($)
 		$('#Navbar a[data-toggle="tab"]').on('show', beforeTabShow);
 		$('#Navbar a[data-toggle="tab"]').on('shown', afterTabShow);
 		setupSearch();
+		
+		$('li > a:has(table)').addClass('has-table');
 
 		$(window).scroll(windowScrolled);
 	}
@@ -606,6 +611,8 @@ var Refresher = (new function($)
 			// stop animations
 			Status.redraw();
 		}
+		
+		$('html, body').animate({scrollTop: 0 }, 400);
 	};
 
 	function refreshStarted()

@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1012 $
- * $Date: 2014-05-06 17:36:15 +0200 (Tue, 06 May 2014) $
+ * $Revision: 1160 $
+ * $Date: 2014-11-16 17:24:06 +0100 (dim. 16 nov. 2014) $
  *
  */
 
@@ -31,6 +31,7 @@
 "Status.Left"="%@ left";
 "Status.NoConnection"="Downloader Not Responding";
 "Status.Restarting"="Restarting";
+"Status.PreventSleep"="NZBGet is downloading or post-processing";
 
 "Left.Days"="%i days";
 "Left.Days.Hours"="%id %ih";

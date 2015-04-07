@@ -17,8 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1043 $
- * $Date: 2014-06-13 23:53:27 +0200 (Fri, 13 Jun 2014) $
+ * $Revision: 1217 $
+ * $Date: 2015-02-20 22:05:51 +0100 (ven. 20 févr. 2015) $
  *
  */
 
@@ -525,7 +525,11 @@ var RPC = (new function($)
 								}
 								else
 								{
-									res = result.error.message + '<br><br>Request: ' + request;
+									res = result.error.message;
+									if (result.error.message != 'Access denied')
+									{
+										res = res + '<br><br>Request: ' + request;
+									}
 								}
 							}
 						}

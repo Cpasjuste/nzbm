@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1150 $
- * $Date: 2014-10-21 22:21:31 +0200 (Tue, 21 Oct 2014) $
+ * $Revision: 1226 $
+ * $Date: 2015-03-02 21:49:05 +0100 (lun. 02 mars 2015) $
  *
  */
 
@@ -132,7 +132,16 @@ void EnvironmentStrings::InitFromCurrentProcess()
 	for (int i = 0; (*g_szEnvironmentVariables)[i]; i++)
 	{
 		char* szVar = (*g_szEnvironmentVariables)[i];
-		Append(strdup(szVar));
+		// Ignore all env vars set by NZBGet.
+		// This is to avoid the passing of env vars after program update (when NZBGet is
+		// started from a script which was started by a previous instance of NZBGet).
+		// Format: NZBXX_YYYY (XX are any two characters, YYYY are any number of any characters).
+#ifndef ANDROID // android > 5.x crash
+		if (!(!strncmp(szVar, "NZB", 3) && strlen(szVar) > 5 && szVar[5] == '_'))
+		{
+			Append(strdup(szVar));
+		}
+#endif
 	}
 }
 
@@ -202,7 +211,7 @@ ScriptController::ScriptController()
 	m_bTerminated = false;
 	m_bDetached = false;
 	m_hProcess = 0;
-	m_environmentStrings.InitFromCurrentProcess();
+	ResetEnv();
 
 	m_mutexRunning.Lock();
 	m_RunningScripts.push_back(this);
@@ -220,9 +229,18 @@ ScriptController::~ScriptController()
 		free(m_szArgs);
 	}
 
-	m_mutexRunning.Lock();
-	m_RunningScripts.erase(std::find(m_RunningScripts.begin(), m_RunningScripts.end(), this));
-	m_mutexRunning.Unlock();
+	UnregisterRunningScript();
+}
+
+void ScriptController::UnregisterRunningScript()
+{
+    m_mutexRunning.Lock();
+    RunningScripts::iterator it = std::find(m_RunningScripts.begin(), m_RunningScripts.end(), this);
+    if (it != m_RunningScripts.end())
+    {
+        m_RunningScripts.erase(it);
+    }
+    m_mutexRunning.Unlock();
 }
 
 void ScriptController::ResetEnv()
@@ -396,6 +414,8 @@ int ScriptController::Execute()
 
 	CreatePipe(&hReadPipe, &hWritePipe, &SecurityAttributes, 0);
 
+	SetHandleInformation(hReadPipe, HANDLE_FLAG_INHERIT, 0);
+
 	STARTUPINFO StartupInfo;
 	memset(&StartupInfo, 0, sizeof(StartupInfo));
 	StartupInfo.cb = sizeof(StartupInfo);
@@ -417,15 +437,15 @@ int ScriptController::Execute()
 		szErrMsg[255-1] = '\0';
 		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwErrCode, 0, szErrMsg, 255, NULL))
 		{
-			error("Could not start %s: %s", m_szInfoName, szErrMsg);
+			PrintMessage(Message::mkError, "Could not start %s: %s", m_szInfoName, szErrMsg);
 		}
 		else
 		{
-			error("Could not start %s: error %i", m_szInfoName, dwErrCode);
+			PrintMessage(Message::mkError, "Could not start %s: error %i", m_szInfoName, dwErrCode);
 		}
 		if (!Util::FileExists(m_szScript))
 		{
-			error("Could not find file %s", m_szScript);
+			PrintMessage(Message::mkError, "Could not find file %s", m_szScript);
 		}
 		free(szEnvironmentStrings);
 		return -1;
@@ -450,7 +470,7 @@ int ScriptController::Execute()
 	// create the pipe
 	if (pipe(p))
 	{
-		error("Could not open pipe: errno %i", errno);
+		PrintMessage(Message::mkError, "Could not open pipe: errno %i", errno);
 		return -1;
 	}
 
@@ -464,7 +484,7 @@ int ScriptController::Execute()
 
 	if (pid == -1)
 	{
-		error("Could not start %s: errno %i", m_szInfoName, errno);
+		PrintMessage(Message::mkError, "Could not start %s: errno %i", m_szInfoName, errno);
 		free(pEnvironmentStrings);
 		return -1;
 	}
@@ -524,7 +544,7 @@ int ScriptController::Execute()
 	m_pReadpipe = fdopen(pipein, "r");
 	if (!m_pReadpipe)
 	{
-		error("Could not open pipe to %s", m_szInfoName);
+		PrintMessage(Message::mkError, "Could not open pipe to %s", m_szInfoName);
 		return -1;
 	}
 	
@@ -632,6 +652,12 @@ void ScriptController::Terminate()
 		// wait 60 seconds for process to terminate
 		WaitForSingleObject(m_hProcess, 60 * 1000);
 	}
+	else
+	{
+		DWORD dExitCode = 0;
+		GetExitCodeProcess(m_hProcess, &dExitCode);
+		bOK = dExitCode != STILL_ACTIVE;
+	}
 #else
 	pid_t hKillProcess = m_hProcess;
 	if (getpgid(hKillProcess) == hKillProcess)
@@ -639,7 +665,7 @@ void ScriptController::Terminate()
 		// if the child process has its own group (setsid() was successful), kill the whole group
 		hKillProcess = -hKillProcess;
 	}
-	bool bOK = kill(hKillProcess, SIGKILL) == 0;
+	bool bOK = hKillProcess && kill(hKillProcess, SIGKILL) == 0;
 #endif
 
 	if (bOK)
@@ -677,6 +703,12 @@ void ScriptController::Detach()
 	fclose(pReadpipe);
 }
 	
+void ScriptController::Resume()
+{
+	m_bTerminated = false;
+	m_bDetached = false;
+	m_hProcess = 0;
+}
 
 bool ScriptController::ReadLine(char* szBuf, int iBufSize, FILE* pStream)
 {

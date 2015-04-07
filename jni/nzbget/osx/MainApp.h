@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,12 +17,13 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 807 $
- * $Date: 2013-08-31 23:14:39 +0200 (Sat, 31 Aug 2013) $
+ * $Revision: 1160 $
+ * $Date: 2014-11-16 17:24:06 +0100 (dim. 16 nov. 2014) $
  *
  */
 
 #import <Cocoa/Cocoa.h>
+#import <IOKit/pwr_mgt/IOPMLib.h>
 #import "DaemonController.h"
 
 @interface MainApp : NSObject <NSMenuDelegate, DaemonControllerDelegate> {
@@ -49,6 +50,8 @@
 	int connectionAttempts;
 	BOOL restarting;
 	BOOL resetting;
+	BOOL preventingSleep;
+	IOPMAssertionID sleepID;
 	NSTimer* restartTimer;
 	NSMutableArray* categoryItems;
 	NSMutableArray* categoryDirs;
@@ -77,5 +80,7 @@
 - (IBAction)restartClicked:(id)sender;
 
 - (IBAction)showInFinderClicked:(id)sender;
+
+- (void)updateSleepState:(BOOL)preventSleep;
 
 @end

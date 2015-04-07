@@ -25,6 +25,9 @@ proguard/
 # Log Files
 *.log
 
+# SVN
+.svn
+
 ##
 ## C/C++ (jni)
 ##

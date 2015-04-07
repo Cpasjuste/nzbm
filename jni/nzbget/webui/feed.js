@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1045 $
- * $Date: 2014-06-19 17:00:46 +0200 (Thu, 19 Jun 2014) $
+ * $Revision: 1218 $
+ * $Date: 2015-02-22 23:05:59 +0100 (dim. 22 févr. 2015) $
  *
  */
 
@@ -60,10 +60,13 @@ var Feeds = (new function($)
 			{
 				var item = menuItemTemplate.clone();
 				var name = Options.option('Feed' + i + '.Name');
-				var a = $('a', item);
+				var a = $('span', item);
 				a.text(name !== '' ? name : 'Feed' + i);
 				a.attr('data-id', i);
 				a.click(viewFeed);
+				var im = $('button', item);
+				im.click(fetchFeed);
+				im.attr('data-id', i);
 				insertPos.before(item);
 			}
 		}
@@ -77,11 +80,20 @@ var Feeds = (new function($)
 		FeedDialog.showModal(id);
 	}
 
+	function fetchFeed()
+	{
+		var id = parseInt($(this).attr('data-id'));
+		RPC.call('fetchfeed', [id], function()
+		{
+			Notification.show('#Notif_Feeds_Fetch');
+		});
+	}
+
 	this.fetchAll = function()
 	{
 		RPC.call('fetchfeed', [0], function()
 		{
-			Notification.show('#Notif_Feeds_FetchAll');
+			Notification.show('#Notif_Feeds_Fetch');
 		});
 	}
 }(jQuery));

@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1097 $
- * $Date: 2014-08-19 21:56:09 +0200 (Tue, 19 Aug 2014) $
+ * $Revision: 1250 $
+ * $Date: 2015-03-31 21:52:57 +0200 (mar. 31 mars 2015) $
  *
  */
 
@@ -39,6 +39,7 @@ var Options = (new function($)
 	this.options;
 	this.postParamConfig;
 	this.categories = [];
+	this.restricted = false;
 
 	// State
 	var _this = this;
@@ -62,6 +63,7 @@ var Options = (new function($)
 		RPC.call('config', [], function(_options) {
 			_this.options = _options;
 			initCategories();
+			_this.restricted = _this.option('ControlPort') === '***';
 
 			// loading config templates and build list of post-processing parameters
 			_this.postParamConfig = [];
@@ -643,7 +645,7 @@ var Config = (new function($)
 
 	/*** GENERATE HTML PAGE *****************************************************************/
 
-	function buildOptionsContent(section)
+	function buildOptionsContent(section, extensionsec)
 	{
 		var html = '';
 
@@ -653,6 +655,13 @@ var Config = (new function($)
 
 		for (var i=0, op=0; i < section.options.length; i++)
 		{
+			if (i > 0 && extensionsec && Options.restricted)
+			{
+				// in restricted mode don't show any options for extension scripts,
+				// option's content is hidden content anyway (***)
+				break;
+			}
+			
 			var option = section.options[i];
 			if (!option.template)
 			{
@@ -867,13 +876,22 @@ var Config = (new function($)
 
 		if (hasoptions)
 		{
-			html += '<div class="' + section.id + ' multiid' + multiid + ' multiset">';
-			html += '<button type="button" class="btn config-delete" data-multiid="' + multiid + ' multiset" ' +
+			html += '<div class="' + section.id + ' multiid' + multiid + ' multiset multiset-toolbar">';
+			html += '<button type="button" class="btn config-button config-delete" data-multiid="' + multiid + '" ' +
 				'onclick="Config.deleteSet(this, \'' + setname + '\',\'' + section.id + '\')">Delete ' + setname + multiid + '</button>';
+			html += ' <button type="button" class="btn config-button" data-multiid="' + multiid + '" ' +
+				'onclick="Config.moveSet(this, \'' + setname + '\',\'' + section.id + '\', \'up\')">Move Up</button>';
+			html += ' <button type="button" class="btn config-button" data-multiid="' + multiid + '" ' +
+				'onclick="Config.moveSet(this, \'' + setname + '\',\'' + section.id + '\', \'down\')">Move Down</button>';
 			if (setname.toLowerCase() === 'feed')
 			{
-				html += ' <button type="button" class="btn config-previewfeed config-feed" data-multiid="' + multiid + ' multiset" ' +
+				html += ' <button type="button" class="btn config-button" data-multiid="' + multiid + '" ' +
 					'onclick="Config.previewFeed(this, \'' + setname + '\',\'' + section.id + '\')">Preview Feed</button>';
+			}
+			if (setname.toLowerCase() === 'server')
+			{
+				html += ' <button type="button" class="btn config-button" data-multiid="' + multiid + '" ' +
+					'onclick="Config.testConnection(this, \'' + setname + '\',\'' + section.id + '\')">Test Connection</button>';
 			}
 			html += '<hr>';
 			html += '</div>';
@@ -917,7 +935,7 @@ var Config = (new function($)
 				{
 					var html = $('<li><a href="#' + section.id + '">' + section.name + '</a></li>');
 					$ConfigNav.append(html);
-					var content = buildOptionsContent(section);
+					var content = buildOptionsContent(section, k > 0);
 					$ConfigData.append(content);
 					added = true;
 				}
@@ -1209,36 +1227,56 @@ var Config = (new function($)
 
 	function reformatSection(section, setname)
 	{
-		var oldMultiId = -1;
-		var newMultiId = 0;
+		var hasOptions = false;
+		var lastMultiId = 0;
 		for (var j=0; j < section.options.length; j++)
 		{
 			var option = section.options[j];
 			if (!option.template)
 			{
-				if (option.multiid !== oldMultiId)
+				if (option.multiid !== lastMultiId && option.multiid !== lastMultiId + 1)
 				{
-					oldMultiId = option.multiid;
-					newMultiId++;
-
-					// reformat multiid
-					var div = $('#' + setname + oldMultiId);
-					div.attr('id', setname + newMultiId);
-
-					// update captions
-					$('.config-settitle.' + section.id + '.multiid' + oldMultiId, $ConfigData).text(setname + newMultiId);
-					$('.' + section.id + '.multiid' + oldMultiId + ' .config-multicaption', $ConfigData).text(setname + newMultiId + '.');
-					$('.' + section.id + '.multiid' + oldMultiId + ' .config-delete', $ConfigData).text('Delete ' + setname + newMultiId).attr('data-multiid', newMultiId);
-					$('.' + section.id + '.multiid' + oldMultiId + ' .config-feed', $ConfigData).attr('data-multiid', newMultiId);
-
-					//update class
-					$('.' + section.id + '.multiid' + oldMultiId, $ConfigData).removeClass('multiid' + oldMultiId).addClass('multiid' + newMultiId);
+					reformatSet(section, setname, option.multiid, lastMultiId + 1);
 				}
+				lastMultiId = option.multiid;
+				hasOptions = true;
+			}
+		}
+
+		// update add-button
+		var addButton = $('.config-add.' + section.id, $ConfigData);
+		addButton.text('Add ' + (hasOptions ? 'another ' : '') + setname);
+	}
+
+	function reformatSet(section, setname, oldMultiId, newMultiId)
+	{
+		for (var j=0; j < section.options.length; j++)
+		{
+			var option = section.options[j];
+			if (!option.template && option.multiid == oldMultiId)
+			{
+				// reformat multiid
+				var div = $('#' + setname + oldMultiId);
+				div.attr('id', setname + newMultiId);
+
+				// update captions
+				$('.config-settitle.' + section.id + '.multiid' + oldMultiId, $ConfigData).text(setname + newMultiId);
+				$('.' + section.id + '.multiid' + oldMultiId + ' .config-multicaption', $ConfigData).text(setname + newMultiId + '.');
+				$('.' + section.id + '.multiid' + oldMultiId + ' .config-delete', $ConfigData).text('Delete ' + setname + newMultiId);
+
+				//update data id
+				$('.' + section.id + '.multiid' + oldMultiId + ' .config-button', $ConfigData).attr('data-multiid', newMultiId);
+
+				//update class
+				$('.' + section.id + '.multiid' + oldMultiId, $ConfigData).removeClass('multiid' + oldMultiId).addClass('multiid' + newMultiId);
 
 				// update input id
 				var oldFormId = option.formId;
 				option.formId = option.formId.replace(new RegExp(option.multiid), newMultiId);
 				$('#' + oldFormId).attr('id', option.formId);
+
+				// update label data-optid
+				$('a[data-optid=' + oldFormId + ']').attr('data-optid', option.formId);
 
 				// update editor id
 				$('#' + oldFormId + '_Editor').attr('id', option.formId + '_Editor');
@@ -1249,12 +1287,8 @@ var Config = (new function($)
 				option.multiid = newMultiId;
 			}
 		}
-
-		// update add-button
-		var addButton = $('.config-add.' + section.id, $ConfigData);
-		addButton.text('Add ' + (newMultiId > 0 ? 'another ' : '') + setname);
 	}
-
+	
 	this.addSet = function(setname, sectionId)
 	{
 		// find section
@@ -1320,6 +1354,31 @@ var Config = (new function($)
 			div.after(opts);
 			div.remove();
 		});
+	}
+
+	this.moveSet = function(control, setname, sectionId, direction)
+	{
+		var id1 = parseInt($(control).attr('data-multiid'));
+		var id2 = direction === 'down' ? id1 + 1 : id1 - 1;
+
+		// swap options in two sets
+		var opts1 = $('.' + sectionId + '.multiid' + (direction === 'down' ? id1 : id2), $ConfigData);
+		var opts2 = $('.' + sectionId + '.multiid' + (direction === 'down' ? id2 : id1), $ConfigData);
+		
+		if (opts1.length === 0 || opts2.length === 0)
+		{
+			return;
+		}
+		
+		opts1.first().before(opts2);
+
+		// reformat remaining sets (captions, input IDs, etc.)
+		var section = findSectionById(sectionId);
+		reformatSet(section, setname, id2, 10000 + id2);
+		reformatSet(section, setname, id1, id2);
+		reformatSet(section, setname, 10000 + id2, id1);
+
+		section.modified = true;
 	}
 
 	this.viewMode = function()
@@ -1409,6 +1468,56 @@ var Config = (new function($)
 			getOptionValue(findOptionByName('Feed' + multiid + '.PauseNzb')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Category')),
 			getOptionValue(findOptionByName('Feed' + multiid + '.Priority')));
+	}
+
+	/*** TEST SERVER ********************************************************************/
+
+	var connecting = false;
+	
+	this.testConnection = function(control, setname, sectionId)
+	{
+		if (connecting)
+		{
+			return;
+		}
+
+		connecting = true;
+		$('#Notif_Config_TestConnectionProgress').fadeIn(function() {
+			var multiid = parseInt($(control).attr('data-multiid'));
+			var timeout = Math.min(parseInt(getOptionValue(findOptionByName('ArticleTimeout'))), 10);
+			RPC.call('testserver', [
+				getOptionValue(findOptionByName('Server' + multiid + '.Host')),
+				parseInt(getOptionValue(findOptionByName('Server' + multiid + '.Port'))),
+				getOptionValue(findOptionByName('Server' + multiid + '.Username')),
+				getOptionValue(findOptionByName('Server' + multiid + '.Password')),
+				getOptionValue(findOptionByName('Server' + multiid + '.Encryption')) === 'yes',
+				getOptionValue(findOptionByName('Server' + multiid + '.Cipher')),
+				timeout
+				],
+				function(errtext) {
+					$('#Notif_Config_TestConnectionProgress').fadeOut(function() {
+						if (errtext == '')
+						{
+							Notification.show('#Notif_Config_TestConnectionOK');
+						}
+						else
+						{
+							AlertDialog.showModal('Connection test failed', errtext);
+						}
+					});
+					connecting = false;
+				},
+				function(message, resultObj) {
+					$('#Notif_Config_TestConnectionProgress').fadeOut(function() {
+						if (resultObj && resultObj.error && resultObj.error.message)
+						{
+							message = resultObj.error.message;
+						}
+						AlertDialog.showModal('Connection test failed', message);
+						connecting = false;
+					});
+				});
+		});
 	}
 
 	/*** SAVE ********************************************************************/
@@ -2445,6 +2554,7 @@ var UpdateDialog = (new function($)
 	var UpdateInfo;
 	var lastUpTimeSec;
 	var installing = false;
+	var logReceived = false;
 
 	this.init = function()
 	{
@@ -2651,7 +2761,7 @@ var UpdateDialog = (new function($)
 		
 		if (!script)
 		{
-			alert('Something is wrong with a package configuration file "package-info.json".');
+			alert('Something is wrong with the package configuration file "package-info.json".');
 			return;
 		}
 
@@ -2687,16 +2797,24 @@ var UpdateDialog = (new function($)
 	{
 		RPC.call('logupdate', [0, 100], function(data)
 			{
-				updateLogTable(data);
-				setTimeout(updateLog, 500);
-			},
-			function()
-			{
-				// rpc-failure: the program has been terminated. Waiting for new instance.
-				setLogContentAndScroll($UpdateProgressDialog_Log.html() + '\n' + 'NZBGet has been terminated. Waiting for restart...');
-				setTimeout(checkStatus, 500);
-			},
-			1000);
+				logReceived = logReceived || data.length > 0;
+				if (logReceived && data.length === 0)
+				{
+					terminated();
+				}
+				else
+				{
+					updateLogTable(data);
+					setTimeout(updateLog, 500);
+				}
+			}, terminated);
+	}
+
+	function terminated()
+	{
+		// rpc-failure: the program has been terminated. Waiting for new instance.
+		setLogContentAndScroll($UpdateProgressDialog_Log.html() + '\n' + 'NZBGet has been terminated. Waiting for restart...');
+		setTimeout(checkStatus, 500);
 	}
 
 	function setLogContentAndScroll(html)
@@ -2734,7 +2852,10 @@ var UpdateDialog = (new function($)
 				{
 					// the old instance is not restarted yet
 					// waiting 0.5 sec. and retrying
-					setTimeout(checkStatus, 500);
+					if ($('#UpdateProgressDialog').is(':visible'))
+					{
+						setTimeout(checkStatus, 500);
+					}
 				}
 				else
 				{
@@ -2749,9 +2870,11 @@ var UpdateDialog = (new function($)
 			function()
 			{
 				// Failure, waiting 0.5 sec. and retrying
-				setTimeout(checkStatus, 500);
-			},
-			1000);
+				if ($('#UpdateProgressDialog').is(':visible'))
+				{
+					setTimeout(checkStatus, 500);
+				}
+			});
 	}
 	
 }(jQuery));

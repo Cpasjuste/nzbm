@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 973 $
- * $Date: 2014-04-01 23:06:31 +0200 (Tue, 01 Apr 2014) $
+ * $Revision: 1250 $
+ * $Date: 2015-03-31 21:52:57 +0200 (mar. 31 mars 2015) $
  *
  */
 
@@ -49,7 +49,11 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <fcntl.h>
 #endif
+
+#include <vector>
+#include <algorithm>
 
 #include "nzbget.h"
 #include "Connection.h"
@@ -61,7 +65,6 @@ static const int CONNECTION_READBUFFER_SIZE = 1024;
 Mutex* Connection::m_pMutexGetHostByName = NULL;
 #endif
 #endif
-
 
 void Connection::Init()
 {
@@ -128,6 +131,7 @@ Connection::Connection(const char* szHost, int iPort, bool bTLS)
 	m_bSuppressErrors = true;
 	m_szReadBuf = (char*)malloc(CONNECTION_READBUFFER_SIZE + 1);
 	m_iTotalBytesRead = 0;
+	m_bBroken = false;
 #ifndef DISABLE_TLS
 	m_pTLSSocket = NULL;
 	m_bTLSError = false;
@@ -254,14 +258,18 @@ bool Connection::Bind()
 	int res = getaddrinfo(m_szHost, iPortStr, &addr_hints, &addr_list);
 	if (res != 0)
 	{
-		error("Could not resolve hostname %s", m_szHost);
+		ReportError("Could not resolve hostname %s", m_szHost, false, 0);
 		return false;
 	}
 	
+	m_bBroken = false;
 	m_iSocket = INVALID_SOCKET;
 	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
 	{
 		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+#ifdef WIN32
+		SetHandleInformation((HANDLE)m_iSocket, HANDLE_FLAG_INHERIT, 0);
+#endif
 		if (m_iSocket != INVALID_SOCKET)
 		{
 			int opt = 1;
@@ -345,6 +353,10 @@ int Connection::WriteLine(const char* pBuffer)
 	}
 
 	int iRes = send(m_iSocket, pBuffer, strlen(pBuffer), 0);
+	if (iRes <= 0)
+	{
+		m_bBroken = true;
+	}
 
 	return iRes;
 }
@@ -364,6 +376,7 @@ bool Connection::Send(const char* pBuffer, int iSize)
 		int iRes = send(m_iSocket, pBuffer + iBytesSent, iSize-iBytesSent, 0);
 		if (iRes <= 0)
 		{
+			m_bBroken = true;
 			return false;
 		}
 		iBytesSent += iRes;
@@ -392,6 +405,7 @@ char* Connection::ReadLine(char* pBuffer, int iSize, int* pBytesRead)
 			if (iBufAvail < 0)
 			{
 				ReportError("Could not receive data on socket", NULL, true, 0);
+				m_bBroken = true;
 				break;
 			}
 			else if (iBufAvail == 0)
@@ -530,6 +544,7 @@ bool Connection::DoConnect()
 	debug("Do connecting");
 
 	m_iSocket = INVALID_SOCKET;
+	m_bBroken = false;
 	
 #ifdef HAVE_GETADDRINFO
 	struct addrinfo addr_hints, *addr_list, *addr;
@@ -548,33 +563,45 @@ bool Connection::DoConnect()
 		return false;
 	}
 
+	std::vector<SockAddr> triedAddr;
+	bool bConnected = false;
+
 	for (addr = addr_list; addr != NULL; addr = addr->ai_next)
 	{
-		bool bLastAddr = !addr->ai_next;
-		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
-		if (m_iSocket != INVALID_SOCKET)
+		// don't try the same combinations of ai_family, ai_socktype, ai_protocol multiple times
+		SockAddr sa = { addr->ai_family, addr->ai_socktype, addr->ai_protocol };
+		if (std::find(triedAddr.begin(), triedAddr.end(), sa) != triedAddr.end())
 		{
-			res = connect(m_iSocket , addr->ai_addr, addr->ai_addrlen);
-			if (res != -1) 
-			{
-				// Connection established
-				break;
-			}
-			// Connection failed
-			if (bLastAddr)
-			{
-				ReportError("Connection to %s failed", m_szHost, true, 0);
-			}
-			closesocket(m_iSocket);
-			m_iSocket = INVALID_SOCKET;
+			continue;
 		}
-		else if (bLastAddr)
+		triedAddr.push_back(sa);
+
+		m_iSocket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+#ifdef WIN32
+		SetHandleInformation((HANDLE)m_iSocket, HANDLE_FLAG_INHERIT, 0);
+#endif
+		if (m_iSocket == INVALID_SOCKET)
 		{
 			ReportError("Socket creation failed for %s", m_szHost, true, 0);
+			break;
+		}
+
+		if (ConnectWithTimeout(addr->ai_addr, addr->ai_addrlen))
+		{
+			// Connection established
+			bConnected = true;
+			break;
 		}
 	}
 
 	freeaddrinfo(addr_list);
+
+	if (!bConnected && m_iSocket != INVALID_SOCKET)
+	{
+		ReportError("Connection to %s failed", m_szHost, true, 0);
+		closesocket(m_iSocket);
+		m_iSocket = INVALID_SOCKET;
+	}
 
 	if (m_iSocket == INVALID_SOCKET)
 	{
@@ -600,8 +627,7 @@ bool Connection::DoConnect()
 		return false;
 	}
 
-	int res = connect(m_iSocket , (struct sockaddr *) & sSocketAddress, sizeof(sSocketAddress));
-	if (res == -1)
+	if (!ConnectWithTimeout(&sSocketAddress, sizeof(sSocketAddress)))
 	{
 		ReportError("Connection to %s failed", m_szHost, true, 0);
 		closesocket(m_iSocket);
@@ -610,22 +636,153 @@ bool Connection::DoConnect()
 	}
 #endif
 
-#ifdef WIN32
-	int MSecVal = m_iTimeout * 1000;
-	int err = setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&MSecVal, sizeof(MSecVal));
-#else
-	struct timeval TimeVal;
-	TimeVal.tv_sec = m_iTimeout;
-	TimeVal.tv_usec = 0;
-	int err = setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&TimeVal, sizeof(TimeVal));
-#endif
-	if (err != 0)
+	if (!InitSocketOpts())
 	{
-		ReportError("Socket initialization failed for %s", m_szHost, true, 0);
+		return false;
 	}
 
 #ifndef DISABLE_TLS
 	if (m_bTLS && !StartTLS(true, NULL, NULL))
+	{
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+bool Connection::InitSocketOpts()
+{
+	char* optbuf = NULL;
+	int optsize = 0;
+#ifdef WIN32
+	int MSecVal = m_iTimeout * 1000;
+	optbuf = (char*)&MSecVal;
+	optsize = sizeof(MSecVal);
+#else
+	struct timeval TimeVal;
+	TimeVal.tv_sec = m_iTimeout;
+	TimeVal.tv_usec = 0;
+	optbuf = (char*)&TimeVal;
+	optsize = sizeof(TimeVal);
+#endif
+	int err = setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, optbuf, optsize);
+	if (err != 0)
+	{
+		ReportError("Socket initialization failed for %s", m_szHost, true, 0);
+		return false;
+	}
+	err = setsockopt(m_iSocket, SOL_SOCKET, SO_SNDTIMEO, optbuf, optsize);
+	if (err != 0)
+	{
+		ReportError("Socket initialization failed for %s", m_szHost, true, 0);
+		return false;
+	}
+	return true;
+}
+
+bool Connection::ConnectWithTimeout(void* address, int address_len)
+{
+	int flags = 0, error = 0, ret = 0;
+	fd_set rset, wset;
+	socklen_t len = sizeof(error);
+
+	struct timeval ts;
+	ts.tv_sec = m_iTimeout;
+	ts.tv_usec = 0;
+
+	//clear out descriptor sets for select
+	//add socket to the descriptor sets
+	FD_ZERO(&rset);
+	FD_SET(m_iSocket, &rset);
+	wset = rset;    //structure assignment ok
+
+	//set socket nonblocking flag
+#ifdef WIN32
+	u_long mode = 1;
+	if (ioctlsocket(m_iSocket, FIONBIO, &mode) != 0)
+	{
+		return false;
+	}
+#else
+	flags = fcntl(m_iSocket, F_GETFL, 0);
+	if (flags < 0)
+	{
+		return false;
+	}
+
+	if (fcntl(m_iSocket, F_SETFL, flags | O_NONBLOCK) < 0)
+	{
+		return false;
+	}
+#endif
+
+	//initiate non-blocking connect
+	ret = connect(m_iSocket, (struct sockaddr*)address, address_len);
+	if (ret < 0)
+	{
+#ifdef WIN32
+		int err = WSAGetLastError();
+		if (err != WSAEWOULDBLOCK)
+		{
+			return false;
+		}
+#else
+		if (errno != EINPROGRESS)
+		{
+			return false;
+		}
+#endif
+	}
+
+	//connect succeeded right away?
+	if (ret != 0)
+	{
+		ret = select(m_iSocket + 1, &rset, &wset, NULL, m_iTimeout ? &ts : NULL);
+		//we are waiting for connect to complete now
+		if (ret < 0)
+		{
+			return false;
+		}
+		if (ret == 0)
+		{
+			//we had a timeout
+#ifdef WIN32
+			WSASetLastError(WSAETIMEDOUT);
+#else
+			errno = ETIMEDOUT;
+#endif
+			return false;
+		}
+
+		if (!(FD_ISSET(m_iSocket, &rset) || FD_ISSET(m_iSocket, &wset)))
+		{
+			return false;
+		}
+		//we had a positivite return so a descriptor is ready
+
+		if (getsockopt(m_iSocket, SOL_SOCKET, SO_ERROR, (char*)&error, &len) < 0)
+		{
+			return false;
+		}
+
+		//check if we had a socket error
+		if (error)
+		{
+			errno = error;
+			return false;
+		}
+	}
+
+	//put socket back in blocking mode
+#ifdef WIN32
+	mode = 0;
+	if (ioctlsocket(m_iSocket, FIONBIO, &mode) != 0)
+	{
+		return false;
+	}
+#else
+	if (fcntl(m_iSocket, F_SETFL, flags) < 0)
 	{
 		return false;
 	}
@@ -686,12 +843,15 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool
 	char szErrPrefix[1024];
 	snprintf(szErrPrefix, 1024, szMsgPrefix, szMsgArg);
 	szErrPrefix[1024-1] = '\0';
-	
+
+	char szMessage[1024];
+
 	if (PrintErrCode)
 	{
 #ifdef WIN32
 		int ErrCode = WSAGetLastError();
 		char szErrMsg[1024];
+		szErrMsg[0] = '\0';
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, ErrCode, 0, szErrMsg, 1024, NULL);
 		szErrMsg[1024-1] = '\0';
 #else
@@ -713,7 +873,9 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool
 		}
 		else
 		{
-			error("%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
+			snprintf(szMessage, sizeof(szMessage), "%s: ErrNo %i, %s", szErrPrefix, ErrCode, szErrMsg);
+			szMessage[sizeof(szMessage) - 1] = '\0';
+			PrintError(szMessage);
 		}
 	}
 	else
@@ -724,9 +886,14 @@ void Connection::ReportError(const char* szMsgPrefix, const char* szMsgArg, bool
 		}
 		else
 		{
-			error(szErrPrefix);
+			PrintError(szErrPrefix);
 		}
 	}
+}
+
+void Connection::PrintError(const char* szErrMsg)
+{
+	error("%s", szErrMsg);
 }
 
 #ifndef DISABLE_TLS
@@ -735,7 +902,7 @@ bool Connection::StartTLS(bool bIsClient, const char* szCertFile, const char* sz
 	debug("Starting TLS");
 
 	delete m_pTLSSocket;
-	m_pTLSSocket = new TLSSocket(m_iSocket, bIsClient, szCertFile, szKeyFile, m_szCipher);
+	m_pTLSSocket = new ConTLSSocket(m_iSocket, bIsClient, szCertFile, szKeyFile, m_szCipher, this);
 	m_pTLSSocket->SetSuppressErrors(m_bSuppressErrors);
 
 	return m_pTLSSocket->Start();

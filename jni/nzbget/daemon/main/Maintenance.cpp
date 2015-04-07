@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 957 $
- * $Date: 2014-02-26 22:28:15 +0100 (Wed, 26 Feb 2014) $
+ * $Revision: 1242 $
+ * $Date: 2015-03-24 18:18:22 +0100 (mar. 24 mars 2015) $
  *
  */
 
@@ -48,6 +48,7 @@
 
 extern Options* g_pOptions;
 extern Maintenance* g_pMaintenance;
+extern void ExitProc();
 
 Maintenance::Maintenance()
 {
@@ -69,7 +70,7 @@ Maintenance::~Maintenance()
 		}
 	}
 
-	ClearMessages();
+	m_Messages.Clear();
 
 	free(m_szUpdateScript);
 }
@@ -81,16 +82,7 @@ void Maintenance::ResetUpdateController()
 	m_mutexController.Unlock();
 }
 
-void Maintenance::ClearMessages()
-{
-	for (Log::Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
-	{
-		delete *it;
-	}
-	m_Messages.clear();
-}
-
-Log::Messages* Maintenance::LockMessages()
+MessageList* Maintenance::LockMessages()
 {
 	m_mutexLog.Lock();
 	return &m_Messages;
@@ -101,7 +93,7 @@ void Maintenance::UnlockMessages()
 	m_mutexLog.Unlock();
 }
 
-void Maintenance::AppendMessage(Message::EKind eKind, time_t tTime, const char * szText)
+void Maintenance::AddMessage(Message::EKind eKind, time_t tTime, const char * szText)
 {
 	if (tTime == 0)
 	{
@@ -137,7 +129,18 @@ bool Maintenance::StartUpdate(EBranch eBranch)
 		return false;
 	}
 
-	ClearMessages();
+#ifdef WIN32
+	// make absolute path
+	if (!(strlen(m_szUpdateScript) > 2 && m_szUpdateScript[1] == ':') && m_szUpdateScript[0] != '\\')
+	{
+		char szFilename[MAX_PATH + 100];
+		snprintf(szFilename, sizeof(szFilename), "%s\\%s", g_pOptions->GetAppDir(), m_szUpdateScript);
+		free(m_szUpdateScript);
+		m_szUpdateScript = strdup(szFilename);
+	}
+#endif
+
+	m_Messages.Clear();
 
 	m_UpdateScriptController = new UpdateScriptController();
 	m_UpdateScriptController->SetScript(m_szUpdateScript);
@@ -229,6 +232,9 @@ bool Maintenance::ReadPackageInfoStr(const char* szKey, char** pValue)
 
 void UpdateScriptController::Run()
 {
+	// the update-script should not be automatically terminated when the program quits
+	UnregisterRunningScript();
+
 	m_iPrefixLen = 0;
 	PrintMessage(Message::mkInfo, "Executing update-script %s", GetScript());
 
@@ -266,8 +272,24 @@ void UpdateScriptController::AddMessage(Message::EKind eKind, const char* szText
 {
 	szText = szText + m_iPrefixLen;
 
-	g_pMaintenance->AppendMessage(eKind, time(NULL), szText);
-	ScriptController::AddMessage(eKind, szText);
+	if (!strncmp(szText, "[NZB] ", 6))
+	{
+		debug("Command %s detected", szText + 6);
+		if (!strcmp(szText + 6, "QUIT"))
+		{
+			Detach();
+			ExitProc();
+		}
+		else
+		{
+			error("Invalid command \"%s\" received", szText);
+		}
+	}
+	else
+	{
+		g_pMaintenance->AddMessage(eKind, time(NULL), szText);
+		ScriptController::AddMessage(eKind, szText);
+	}
 }
 
 void UpdateInfoScriptController::ExecuteScript(const char* szScript, char** pUpdateInfo)

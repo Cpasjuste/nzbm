@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1155 $
- * $Date: 2014-11-09 11:04:04 +0100 (Sun, 09 Nov 2014) $
+ * $Revision: 1176 $
+ * $Date: 2014-11-30 15:24:23 +0100 (dim. 30 nov. 2014) $
  *
  */
 
@@ -71,7 +71,7 @@
 /* Define to 1 if spinlocks are supported */
 #define HAVE_SPINLOCK
 
-#define VERSION "14.0"
+#define VERSION "15.0-testing"
 
 /* Suppress warnings */
 #define _CRT_SECURE_NO_DEPRECATE
@@ -80,6 +80,11 @@
 #define _CRT_NONSTDC_NO_WARNINGS
 
 #define _USE_32BIT_TIME_T
+
+#if _WIN32_WINNT < 0x0501
+#undef _WIN32_WINNT
+#define _WIN32_WINNT   0x0501
+#endif
 
 #ifdef _DEBUG
 // detection of memory leaks

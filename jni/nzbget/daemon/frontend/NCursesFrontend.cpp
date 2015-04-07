@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1122 $
- * $Date: 2014-09-08 21:35:11 +0200 (Mon, 08 Sep 2014) $
+ * $Revision: 1221 $
+ * $Date: 2015-02-26 21:57:38 +0100 (jeu. 26 févr. 2015) $
  *
  */
 
@@ -504,7 +504,7 @@ void NCursesFrontend::PrintMessages()
     int iLine = iLineNr + m_iMessagesWinClientHeight - 1;
 	int iLinesToPrint = m_iMessagesWinClientHeight;
 
-    Log::Messages* pMessages = LockMessages();
+    MessageList* pMessages = LockMessages();
     
 	// print messages from bottom
 	for (int i = (int)pMessages->size() - 1; i >= 0 && iLinesToPrint > 0; i--)

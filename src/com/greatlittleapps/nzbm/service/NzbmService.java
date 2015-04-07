@@ -60,12 +60,12 @@ public class NzbmService extends Service
 		
         createNotification();
         
+        // Handle nzbget native configuration file
+        config = new Config(this);
+        
         // Start native nzbget
         nzbget = new Nzbget();
-        nzbget.start();
-        
-        // Handle nzbget native configuration file
-        config = new Config(Paths.config);
+        nzbget.start(config.paths.config);
         
         // 
         client = new NZBGetClient( 
@@ -119,7 +119,10 @@ public class NzbmService extends Service
 	        		{
 	        			Thread.sleep( sleepTime );
 	        		} 
-	        		catch (InterruptedException e) {}
+	        		catch (InterruptedException e) 
+	        		{
+	        			
+	        		}
 				}
 				Utility.log( "NzbmService thread stopped" );
 			}

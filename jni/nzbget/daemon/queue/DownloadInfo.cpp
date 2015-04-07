@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1139 $
- * $Date: 2014-10-09 23:11:42 +0200 (Thu, 09 Oct 2014) $
+ * $Revision: 1245 $
+ * $Date: 2015-03-26 23:28:30 +0100 (jeu. 26 mars 2015) $
  *
  */
 
@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <ctype.h>
 #include <sys/stat.h>
 #include <algorithm>
@@ -42,11 +43,13 @@
 #include "nzbget.h"
 #include "DownloadInfo.h"
 #include "ArticleWriter.h"
+#include "DiskState.h"
 #include "Options.h"
 #include "Util.h"
 
 extern Options* g_pOptions;
 extern ArticleCache* g_pArticleCache;
+extern DiskState* g_pDiskState;
 
 int FileInfo::m_iIDGen = 0;
 int FileInfo::m_iIDMax = 0;
@@ -342,6 +345,8 @@ NZBInfo::NZBInfo() : m_FileList(true)
 	m_bReprocess = false;
 	m_tQueueScriptTime = 0;
 	m_bParFull = false;
+	m_iMessageCount = 0;
+	m_iCachedMessageCount = 0;
 }
 
 NZBInfo::~NZBInfo()
@@ -359,12 +364,6 @@ NZBInfo::~NZBInfo()
 	delete m_pPostInfo;
 
 	ClearCompletedFiles();
-
-	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
-	{
-		delete *it;
-	}
-	m_Messages.clear();
 
 	m_FileList.Clear();
 }
@@ -658,27 +657,81 @@ void NZBInfo::UpdateMinMaxTime()
 	}
 }
 
-NZBInfo::Messages* NZBInfo::LockMessages()
+MessageList* NZBInfo::LockCachedMessages()
 {
 	m_mutexLog.Lock();
 	return &m_Messages;
 }
 
-void NZBInfo::UnlockMessages()
+void NZBInfo::UnlockCachedMessages()
 {
 	m_mutexLog.Unlock();
 }
 
-void NZBInfo::AppendMessage(Message::EKind eKind, time_t tTime, const char * szText)
+void NZBInfo::AddMessage(Message::EKind eKind, const char * szText)
 {
-	if (tTime == 0)
+	switch (eKind)
 	{
-		tTime = time(NULL);
+		case Message::mkDetail:
+			detail("%s", szText);
+			break;
+
+		case Message::mkInfo:
+			info("%s", szText);
+			break;
+
+		case Message::mkWarning:
+			warn("%s", szText);
+			break;
+
+		case Message::mkError:
+			error("%s", szText);
+			break;
+
+		case Message::mkDebug:
+			debug("%s", szText);
+			break;
 	}
 
 	m_mutexLog.Lock();
-	Message* pMessage = new Message(++m_iIDMessageGen, eKind, tTime, szText);
+	Message* pMessage = new Message(++m_iIDMessageGen, eKind, time(NULL), szText);
 	m_Messages.push_back(pMessage);
+
+	if (g_pOptions->GetSaveQueue() && g_pOptions->GetServerMode() && g_pOptions->GetNzbLog())
+	{
+		g_pDiskState->AppendNZBMessage(m_iID, eKind, szText);
+		m_iMessageCount++;
+	}
+
+	while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
+	{
+		Message* pMessage = m_Messages.front();
+		delete pMessage;
+		m_Messages.pop_front();
+	}
+
+	m_iCachedMessageCount = m_Messages.size();
+	m_mutexLog.Unlock();
+}
+
+void NZBInfo::PrintMessage(Message::EKind eKind, const char* szFormat, ...)
+{
+	char tmp2[1024];
+
+	va_list ap;
+	va_start(ap, szFormat);
+	vsnprintf(tmp2, 1024, szFormat, ap);
+	tmp2[1024-1] = '\0';
+	va_end(ap);
+
+	AddMessage(eKind, tmp2);
+}
+
+void NZBInfo::ClearMessages()
+{
+	m_mutexLog.Lock();
+	m_Messages.Clear();
+	m_iCachedMessageCount = 0;
 	m_mutexLog.Unlock();
 }
 
@@ -735,6 +788,7 @@ void NZBInfo::LeavePostProcess()
 {
 	delete m_pPostInfo;
 	m_pPostInfo = NULL;
+	ClearMessages();
 }
 
 void NZBInfo::SetActiveDownloads(int iActiveDownloads)
@@ -759,14 +813,16 @@ void NZBInfo::SetActiveDownloads(int iActiveDownloads)
 bool NZBInfo::IsDupeSuccess()
 {
 	bool bFailure =
-		m_eDeleteStatus != NZBInfo::dsNone ||
+		m_eMarkStatus != NZBInfo::ksSuccess &&
+		m_eMarkStatus != NZBInfo::ksGood &&
+		(m_eDeleteStatus != NZBInfo::dsNone ||
 		m_eMarkStatus == NZBInfo::ksBad ||
 		m_eParStatus == NZBInfo::psFailure ||
 		m_eUnpackStatus == NZBInfo::usFailure ||
 		m_eUnpackStatus == NZBInfo::usPassword ||
 		(m_eParStatus == NZBInfo::psSkipped &&
 		 m_eUnpackStatus == NZBInfo::usSkipped &&
-		 CalcHealth() < CalcCriticalHealth(true));
+		 CalcHealth() < CalcCriticalHealth(true)));
 	return !bFailure;
 }
 
@@ -787,6 +843,10 @@ const char* NZBInfo::MakeTextStatus(bool bIgnoreScriptStatus)
 		else if (m_eMarkStatus == NZBInfo::ksGood)
 		{
 			szStatus = "SUCCESS/GOOD";
+		}
+		else if (m_eMarkStatus == NZBInfo::ksSuccess)
+		{
+			szStatus = "SUCCESS/MARK";
 		}
 		else if (m_eDeleteStatus == NZBInfo::dsHealth)
 		{
@@ -1196,6 +1256,10 @@ PostInfo::PostInfo()
 	m_bRequestParCheck = false;
 	m_bForceParFull = false;
 	m_bForceRepair = false;
+	m_bParRepaired = false;
+	m_bUnpackTried = false;
+	m_bPassListTried = false;
+	m_eLastUnpackStatus = 0;
 	m_szProgressLabel = strdup("");
 	m_iFileProgress = 0;
 	m_iStageProgress = 0;
@@ -1203,7 +1267,6 @@ PostInfo::PostInfo()
 	m_tStageTime = 0;
 	m_eStage = ptQueued;
 	m_pPostThread = NULL;
-	m_iIDMessageGen = 0;
 }
 
 PostInfo::~ PostInfo()
@@ -1211,11 +1274,6 @@ PostInfo::~ PostInfo()
 	debug("Destroying PostInfo");
 
 	free(m_szProgressLabel);
-
-	for (Messages::iterator it = m_Messages.begin(); it != m_Messages.end(); it++)
-	{
-		delete *it;
-	}
 
 	for (ParredFiles::iterator it = m_ParredFiles.begin(); it != m_ParredFiles.end(); it++)
 	{
@@ -1227,32 +1285,6 @@ void PostInfo::SetProgressLabel(const char* szProgressLabel)
 {
 	free(m_szProgressLabel);
 	m_szProgressLabel = strdup(szProgressLabel);
-}
-
-PostInfo::Messages* PostInfo::LockMessages()
-{
-	m_mutexLog.Lock();
-	return &m_Messages;
-}
-
-void PostInfo::UnlockMessages()
-{
-	m_mutexLog.Unlock();
-}
-
-void PostInfo::AppendMessage(Message::EKind eKind, const char * szText)
-{
-	m_mutexLog.Lock();
-	Message* pMessage = new Message(++m_iIDMessageGen, eKind, time(NULL), szText);
-	m_Messages.push_back(pMessage);
-
-	while (m_Messages.size() > (unsigned int)g_pOptions->GetLogBufferSize())
-	{
-		Message* pMessage = m_Messages.front();
-		delete pMessage;
-		m_Messages.pop_front();
-	}
-	m_mutexLog.Unlock();
 }
 
 

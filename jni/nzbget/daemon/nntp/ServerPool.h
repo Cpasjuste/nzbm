@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 967 $
- * $Date: 2014-03-20 22:14:39 +0100 (Thu, 20 Mar 2014) $
+ * $Revision: 1182 $
+ * $Date: 2014-12-21 19:21:49 +0100 (dim. 21 déc. 2014) $
  *
  */
 
@@ -61,18 +61,20 @@ private:
 	int					m_iMaxNormLevel;
 	Mutex			 	m_mutexConnections;
 	int					m_iTimeout;
+	int					m_iRetryInterval;
 	int					m_iGeneration;
 
 	void				NormalizeLevels();
 	static bool			CompareServers(NewsServer* pServer1, NewsServer* pServer2);
 
 protected:
-	virtual void			LogDebugInfo();
+	virtual void		LogDebugInfo();
 
 public:
 						ServerPool();
 						~ServerPool();
 	void				SetTimeout(int iTimeout) { m_iTimeout = iTimeout; }
+	void				SetRetryInterval(int iRetryInterval) { m_iRetryInterval = iRetryInterval; }
 	void 				AddServer(NewsServer* pNewsServer);
 	void				InitConnections();
 	int					GetMaxNormLevel() { return m_iMaxNormLevel; }
@@ -82,6 +84,7 @@ public:
 	void				CloseUnusedConnections();
 	void				Changed();
 	int					GetGeneration() { return m_iGeneration; }
+	void				BlockServer(NewsServer* pNewsServer);
 };
 
 #endif

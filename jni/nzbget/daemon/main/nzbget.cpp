@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1150 $
- * $Date: 2014-10-21 22:21:31 +0200 (Tue, 21 Oct 2014) $
+ * $Revision: 1243 $
+ * $Date: 2015-03-25 21:31:53 +0100 (mer. 25 mars 2015) $
  *
  */
 
@@ -82,6 +82,8 @@
 #include "StackTrace.h"
 #ifdef WIN32
 #include "NTService.h"
+#include "WinConsole.h"
+#include "WebDownloader.h"
 #endif
 
 // Prototypes
@@ -90,6 +92,7 @@ void Run(bool bReload);
 void Reload();
 void Cleanup();
 void ProcessClientRequest();
+void ProcessWebGet();
 #ifndef WIN32
 #ifndef ANDROID
 void Daemonize();
@@ -122,6 +125,9 @@ int g_iArgumentCount;
 char* (*g_szEnvironmentVariables)[] = NULL;
 char* (*g_szArguments)[] = NULL;
 bool g_bReloading = true;
+#ifdef WIN32
+WinConsole* g_pWinConsole = NULL;
+#endif
 
 /*
  * Main loop
@@ -132,7 +138,7 @@ int main(int argc, char *argv[], char *argp[])
 #ifdef _DEBUG
 	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
 	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF
 #ifdef DEBUG_CRTMEMLEAKS
 		| _CRTDBG_CHECK_CRT_DF | _CRTDBG_CHECK_ALWAYS_DF
 #endif
@@ -169,12 +175,6 @@ int main(int argc, char *argv[], char *argp[])
 
 	RunMain();
 
-#ifdef WIN32
-#ifdef _DEBUG
-	_CrtDumpMemoryLeaks();
-#endif
-#endif
-
 	return 0;
 }
 
@@ -208,6 +208,11 @@ void Run(bool bReload)
 		Thread::Init();
 	}
 
+#ifdef WIN32
+	g_pWinConsole = new WinConsole();
+	g_pWinConsole->InitAppMode();
+#endif
+
 	g_pServerPool = new ServerPool();
 	g_pScheduler = new Scheduler();
 	g_pQueueCoordinator = new QueueCoordinator();
@@ -223,7 +228,8 @@ void Run(bool bReload)
 	g_pQueueScriptCoordinator = new QueueScriptCoordinator();
 
 	debug("Reading options");
-	g_pOptions = new Options(g_iArgumentCount, *g_szArguments);
+	g_pOptions = new Options();
+	g_pOptions->Init(g_iArgumentCount, *g_szArguments);
 
 #ifndef WIN32
 	if (g_pOptions->GetUMask() < 01000)
@@ -239,16 +245,14 @@ void Run(bool bReload)
 
 	if (g_pOptions->GetDaemonMode())
 	{
-#ifdef WIN32
+#if defined WIN32 || defined ANDROID
 		info("nzbget %s service-mode", Util::VersionRevision());
 #else
-#ifndef ANDROID
 		if (!bReload)
 		{
 			Daemonize();
 		}
 		info("nzbget %s daemon-mode", Util::VersionRevision());
-#endif
 #endif
 	}
 	else if (g_pOptions->GetServerMode())
@@ -279,6 +283,12 @@ void Run(bool bReload)
 		TestSegFault();
 	}
 #endif
+
+	if (g_pOptions->GetWebGet())
+	{
+		ProcessWebGet();
+		return;
+	}
 
 	// client request
 	if (g_pOptions->GetClientOperation() != Options::opClientNoOperation)
@@ -349,6 +359,9 @@ void Run(bool bReload)
 			g_pDiskState = new DiskState();
 		}
 
+#ifdef WIN32
+		g_pWinConsole->Start();
+#endif
 		g_pQueueCoordinator->Start();
 		g_pUrlCoordinator->Start();
 		g_pPrePostProcessor->Start();
@@ -363,6 +376,9 @@ void Run(bool bReload)
 			g_pUrlCoordinator->IsRunning() || 
 			g_pPrePostProcessor->IsRunning() ||
 			g_pFeedCoordinator->IsRunning() ||
+#ifdef WIN32
+			g_pWinConsole->IsRunning() ||
+#endif
 			g_pArticleCache->IsRunning())
 		{
 			if (!g_pOptions->GetServerMode() && 
@@ -514,7 +530,9 @@ void ProcessClientRequest()
 			break;
 
 		case Options::opClientRequestDownload:
-			Client->RequestServerDownload(g_pOptions->GetArgFilename(), g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority());
+			Client->RequestServerDownload(g_pOptions->GetAddNZBFilename(), g_pOptions->GetArgFilename(),
+				g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority(),
+				g_pOptions->GetAddDupeKey(), g_pOptions->GetAddDupeMode(), g_pOptions->GetAddDupeScore());
 			break;
 
 		case Options::opClientRequestVersion:
@@ -553,12 +571,9 @@ void ProcessClientRequest()
 			Client->RequestServerPauseUnpause(false, eRemotePauseUnpauseActionScan);
 			break;
 
-		case Options::opClientRequestHistory:	 
-			Client->RequestHistory();	 
-			break;
-
-		case Options::opClientRequestDownloadUrl:
-			Client->RequestServerDownloadUrl(g_pOptions->GetLastArg(), g_pOptions->GetAddNZBFilename(), g_pOptions->GetAddCategory(), g_pOptions->GetAddTop(), g_pOptions->GetAddPaused(), g_pOptions->GetAddPriority());
+		case Options::opClientRequestHistory:
+		case Options::opClientRequestHistoryAll:
+			Client->RequestHistory(g_pOptions->GetClientOperation() == Options::opClientRequestHistoryAll);
 			break;
 
 		case Options::opClientNoOperation:
@@ -566,6 +581,27 @@ void ProcessClientRequest()
 	}
 
 	delete Client;
+}
+
+void ProcessWebGet()
+{
+	WebDownloader downloader;
+	downloader.SetURL(g_pOptions->GetLastArg());
+	downloader.SetForce(true);
+	downloader.SetRetry(false);
+	downloader.SetOutputFilename(g_pOptions->GetWebGetFilename());
+	downloader.SetInfoName("WebGet");
+
+	int iRedirects = 0;
+	WebDownloader::EStatus eStatus = WebDownloader::adRedirect;
+	while (eStatus == WebDownloader::adRedirect && iRedirects < 5)
+	{
+		iRedirects++;
+		eStatus = downloader.Download();
+	}
+	bool bOK = eStatus == WebDownloader::adFinished;
+
+	exit(bOK ? 0 : 1);
 }
 
 void ExitProc()
@@ -592,6 +628,9 @@ void ExitProc()
 			g_pPrePostProcessor->Stop();
 			g_pFeedCoordinator->Stop();
 			g_pArticleCache->Stop();
+#ifdef WIN32
+			g_pWinConsole->Stop();
+#endif
 		}
 	}
 }
@@ -708,6 +747,11 @@ void Cleanup()
 		Thread::Final();
 	}
 
+#ifdef WIN32
+	delete g_pWinConsole;
+	g_pWinConsole = NULL;
+#endif
+
 	debug("Global objects cleaned up");
 
 	delete g_pLog;
@@ -718,47 +762,81 @@ void Cleanup()
 #ifndef ANDROID
 void Daemonize()
 {
-	int i, lfp;
-	char str[10];
-	if (getppid() == 1) return; /* already a daemon */
-	i = fork();
-	if (i < 0) exit(1); /* fork error */
-	if (i > 0) exit(0); /* parent exits */
+	int f = fork();
+	if (f < 0) exit(1); /* fork error */
+	if (f > 0) exit(0); /* parent exits */
+
 	/* child (daemon) continues */
-	setsid(); /* obtain a new process group */
-	for (i = getdtablesize();i >= 0;--i) close(i); /* close all descriptors */
-	i = open("/dev/null", O_RDWR); dup(i); dup(i); /* handle standart I/O */
-	chdir(g_pOptions->GetDestDir()); /* change running directory */
-	lfp = open(g_pOptions->GetLockFile(), O_RDWR | O_CREAT, 0640);
-	if (lfp < 0) exit(1); /* can not open */
-	if (lockf(lfp, F_TLOCK, 0) < 0) exit(0); /* can not lock */
+
+	// obtain a new process group
+	setsid();
+
+	// close all descriptors
+	for (int i = getdtablesize(); i >= 0; --i)
+	{
+		close(i);
+	}
+
+	// handle standart I/O
+	int d = open("/dev/null", O_RDWR);
+	dup(d);
+	dup(d);
+
+	// change running directory
+	chdir(g_pOptions->GetDestDir());
+
+	// set up lock-file
+	int lfp = -1;
+	if (!Util::EmptyStr(g_pOptions->GetLockFile()))
+	{
+		lfp = open(g_pOptions->GetLockFile(), O_RDWR | O_CREAT, 0640);
+		if (lfp < 0)
+		{
+			error("Starting daemon failed: could not create lock-file %s", g_pOptions->GetLockFile());
+			exit(1);
+		}
+		if (lockf(lfp, F_TLOCK, 0) < 0)
+		{
+			error("Starting daemon failed: could not acquire lock on lock-file %s", g_pOptions->GetLockFile());
+			exit(1);
+		}
+	}
 
 	/* Drop user if there is one, and we were run as root */
-	if ( getuid() == 0 || geteuid() == 0 )
+	if (getuid() == 0 || geteuid() == 0)
 	{
 		struct passwd *pw = getpwnam(g_pOptions->GetDaemonUsername());
 		if (pw)
 		{
-			fchown(lfp, pw->pw_uid, pw->pw_gid); /* change owner of lock file  */
-			setgroups( 0, (const gid_t*) 0 ); /* Set aux groups to null. */
-			setgid(pw->pw_gid); /* Set primary group. */
-			/* Try setting aux groups correctly - not critical if this fails. */
-			initgroups( g_pOptions->GetDaemonUsername(),pw->pw_gid); 
-			/* Finally, set uid. */
+			// Change owner of lock file
+			fchown(lfp, pw->pw_uid, pw->pw_gid);
+			// Set aux groups to null.
+			setgroups(0, (const gid_t*)0);
+			// Set primary group.
+			setgid(pw->pw_gid);
+			// Try setting aux groups correctly - not critical if this fails.
+			initgroups(g_pOptions->GetDaemonUsername(), pw->pw_gid);
+			// Finally, set uid.
 			setuid(pw->pw_uid);
 		}
 	}
 
-	/* first instance continues */
-	sprintf(str, "%d\n", getpid());
-	write(lfp, str, strlen(str)); /* record pid to lockfile */
-	signal(SIGCHLD, SIG_IGN); /* ignore child */
-	signal(SIGTSTP, SIG_IGN); /* ignore tty signals */
+	// record pid to lockfile
+	if (lfp > -1)
+	{
+		char str[10];
+		sprintf(str, "%d\n", getpid());
+		write(lfp, str, strlen(str));
+	}
+
+	// ignore unwanted signals
+	signal(SIGCHLD, SIG_IGN);
+	signal(SIGTSTP, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 }
 #endif
-#endif
+#endif 
 
 #ifndef DISABLE_PARCHECK
 class NullStreamBuf : public std::streambuf

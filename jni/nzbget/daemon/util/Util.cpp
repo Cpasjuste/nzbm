@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1136 $
- * $Date: 2014-10-04 21:34:03 +0200 (Sat, 04 Oct 2014) $
+ * $Revision: 1232 $
+ * $Date: 2015-03-16 19:25:37 +0100 (lun. 16 mars 2015) $
  *
  */
 
@@ -264,6 +264,14 @@ StringBuilder::StringBuilder()
 StringBuilder::~StringBuilder()
 {
 	free(m_szBuffer);
+}
+
+void StringBuilder::Clear()
+{
+	free(m_szBuffer);
+	m_szBuffer = NULL;
+	m_iBufferSize = 0;
+	m_iUsedSize = 0;
 }
 
 void StringBuilder::Append(const char* szStr)
@@ -1020,6 +1028,14 @@ bool Util::MatchFileExt(const char* szFilename, const char* szExtensionList, con
 		{
 			return true;
 		}
+		if (strchr(szExt, '*') || strchr(szExt, '?'))
+		{
+			WildMask mask(szExt);
+			if (mask.Match(szFilename))
+			{
+				return true;
+			}
+		}
 	}
 
 	return false;
@@ -1044,6 +1060,28 @@ char* Util::GetLastErrorMessage(char* szBuffer, int iBufLen)
 	strerror_r(errno, szBuffer, iBufLen);
 	szBuffer[iBufLen-1] = '\0';
 	return szBuffer;
+}
+
+void Util::FormatSpeed(int iBytesPerSecond, char* szBuffer, int iBufSize)
+{
+	if (iBytesPerSecond >= 100 * 1024 * 1024)
+	{
+		snprintf(szBuffer, iBufSize, "%i MB/s", iBytesPerSecond / 1024 / 1024);
+	}
+	else if (iBytesPerSecond >= 10 * 1024 * 1024)
+	{
+		snprintf(szBuffer, iBufSize, "%0.1f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
+	}
+	else if (iBytesPerSecond >= 1024 * 1000)
+	{
+		snprintf(szBuffer, iBufSize, "%0.2f MB/s", (float)iBytesPerSecond / 1024.0 / 1024.0);
+	}
+	else
+	{
+		snprintf(szBuffer, iBufSize, "%i KB/s", iBytesPerSecond / 1024);
+	}
+
+	szBuffer[iBufSize - 1] = '\0';
 }
 
 void Util::InitVersionRevision()
@@ -2026,6 +2064,36 @@ void WebUtil::HttpUnquote(char* raw)
 				p++;
 				*output++ = *p;
 				break;
+			default:
+				*output++ = *p++;
+				break;
+		}
+	}
+BreakLoop:
+
+	*output = '\0';
+}
+
+void WebUtil::URLDecode(char* raw)
+{
+	char* output = raw;
+	for (char* p = raw;;)
+	{
+		switch (*p)
+		{
+			case '\0':
+				goto BreakLoop;
+			case '%':
+				{
+					p++;
+					unsigned char c1 = *p++;
+					unsigned char c2 = *p++;
+					c1 = '0' <= c1 && c1 <= '9' ? c1 - '0' : 'A' <= c1 && c1 <= 'F' ? c1 - 'A' + 10 : 0;
+					c2 = '0' <= c2 && c2 <= '9' ? c2 - '0' : 'A' <= c2 && c2 <= 'F' ? c2 - 'A' + 10 : 0;
+					unsigned char ch = (c1 << 4) + c2;
+					*output++ = (char)ch;
+                    break;
+				}
 			default:
 				*output++ = *p++;
 				break;

@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2005 Bo Cordes Petersen <placebodk@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1140 $
- * $Date: 2014-10-10 23:13:02 +0200 (Fri, 10 Oct 2014) $
+ * $Revision: 1221 $
+ * $Date: 2015-02-26 21:57:38 +0100 (jeu. 26 févr. 2015) $
  *
  */
 
@@ -398,7 +398,7 @@ void QueueCoordinator::AddNZBFileToQueue(NZBFile* pNZBFile, NZBInfo* pUrlInfo, b
 
 	if (eDeleteStatus == NZBInfo::dsNone)
 	{
-		info("Collection %s added to queue", pNZBInfo->GetName());
+		pNZBInfo->PrintMessage(Message::mkInfo, "Collection %s added to queue", pNZBInfo->GetName());
 	}
 
 	if (eDeleteStatus != NZBInfo::dsManual)
@@ -782,6 +782,11 @@ void QueueCoordinator::StatFileInfo(FileInfo* pFileInfo, bool bCompleted)
 
 void QueueCoordinator::DeleteFileInfo(DownloadQueue* pDownloadQueue, FileInfo* pFileInfo, bool bCompleted)
 {
+	while (g_pArticleCache->FileBusy(pFileInfo))
+	{
+		usleep(5*1000);
+	}
+
 	bool fileDeleted = pFileInfo->GetDeleted();
 	pFileInfo->SetDeleted(true);
 
@@ -882,8 +887,10 @@ void QueueCoordinator::CheckHealth(DownloadQueue* pDownloadQueue, FileInfo* pFil
 	}
 	else if (g_pOptions->GetHealthCheck() == Options::hcDelete)
 	{
-		warn("Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%", pFileInfo->GetNZBInfo()->GetName(),
-			pFileInfo->GetNZBInfo()->CalcHealth() / 10.0, pFileInfo->GetNZBInfo()->CalcCriticalHealth(true) / 10.0);
+		pFileInfo->GetNZBInfo()->PrintMessage(Message::mkWarning,
+			"Cancelling download and deleting %s due to health %.1f%% below critical %.1f%%",
+			pFileInfo->GetNZBInfo()->GetName(), pFileInfo->GetNZBInfo()->CalcHealth() / 10.0,
+			pFileInfo->GetNZBInfo()->CalcCriticalHealth(true) / 10.0);
 		pFileInfo->GetNZBInfo()->SetDeleteStatus(NZBInfo::dsHealth);
 		pDownloadQueue->EditEntry(pFileInfo->GetNZBInfo()->GetID(), DownloadQueue::eaGroupDelete, 0, NULL);
 	}
@@ -983,11 +990,6 @@ bool QueueCoordinator::DeleteQueueEntry(DownloadQueue* pDownloadQueue, FileInfo*
 			bDownloading = true;
 			pArticleDownloader->Stop();
 		}
-	}
-
-	while (g_pArticleCache->FileBusy(pFileInfo))
-	{
-		usleep(20*1000);
 	}
 
 	if (!bDownloading)
@@ -1141,6 +1143,7 @@ bool QueueCoordinator::MergeQueueEntries(DownloadQueue* pDownloadQueue, NZBInfo*
 	free(szQueuedFilename);
 
 	pDownloadQueue->GetQueue()->Remove(pSrcNZBInfo);
+	g_pDiskState->DiscardFiles(pSrcNZBInfo);
 	delete pSrcNZBInfo;
 
 	return true;
@@ -1258,6 +1261,7 @@ bool QueueCoordinator::SplitQueueEntries(DownloadQueue* pDownloadQueue, FileList
 	if (pSrcNZBInfo->GetFileList()->empty())
 	{
 		pDownloadQueue->GetQueue()->Remove(pSrcNZBInfo);
+		g_pDiskState->DiscardFiles(pSrcNZBInfo);
 		delete pSrcNZBInfo;
 	}
 

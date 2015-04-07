@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1122 $
- * $Date: 2014-09-08 21:35:11 +0200 (Mon, 08 Sep 2014) $
+ * $Revision: 1200 $
+ * $Date: 2015-01-27 21:30:14 +0100 (mar. 27 janv. 2015) $
  *
  */
 
@@ -69,6 +69,11 @@
 #define FOPEN_WBP "wb+N"
 #define FOPEN_AB "abN"
 #define FOPEN_ABP "ab+N"
+
+#ifdef DEBUG
+// redefine "exit" to avoid printing memory leaks report when terminated because of wrong command line switches
+#define exit(code) ExitProcess(code)
+#endif
 
 #pragma warning(disable:4800) // 'type' : forcing value to bool 'true' or 'false' (performance warning)
 #pragma warning(disable:4267) // 'var' : conversion from 'size_t' to 'type', possible loss of data

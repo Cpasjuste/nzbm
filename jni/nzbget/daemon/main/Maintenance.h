@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2013-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2013-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 957 $
- * $Date: 2014-02-26 22:28:15 +0100 (Wed, 26 Feb 2014) $
+ * $Revision: 1221 $
+ * $Date: 2015-02-26 21:57:38 +0100 (jeu. 26 févr. 2015) $
  *
  */
 
@@ -35,7 +35,7 @@ class UpdateScriptController;
 class Maintenance
 {
 private:
-	Log::Messages		m_Messages;
+	MessageList			m_Messages;
 	Mutex				m_mutexLog;
 	Mutex				m_mutexController;
 	int					m_iIDMessageGen;
@@ -54,9 +54,8 @@ public:
 
 						Maintenance();
 						~Maintenance();
-	void				ClearMessages();
-	void				AppendMessage(Message::EKind eKind, time_t tTime, const char* szText);
-	Log::Messages*		LockMessages();
+	void				AddMessage(Message::EKind eKind, time_t tTime, const char* szText);
+	MessageList*		LockMessages();
 	void				UnlockMessages();
 	bool				StartUpdate(EBranch eBranch);
 	void				ResetUpdateController();

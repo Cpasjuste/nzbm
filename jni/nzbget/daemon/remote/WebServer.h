@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2012 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 956 $
- * $Date: 2014-02-24 23:11:14 +0100 (Mon, 24 Feb 2014) $
+ * $Revision: 1217 $
+ * $Date: 2015-02-20 22:05:51 +0100 (ven. 20 févr. 2015) $
  *
  */
 
@@ -38,11 +38,19 @@ public:
 		hmOptions
 	};
 
+	enum EUserAccess
+	{
+		uaControl,
+		uaRestricted,
+		uaAdd
+	};
+
 private:
 	Connection*			m_pConnection;
 	char*				m_szRequest;
 	char*				m_szUrl;
 	EHttpMethod			m_eHttpMethod;
+	EUserAccess			m_eUserAccess;
 	bool				m_bGZip;
 	char*				m_szOrigin;
 

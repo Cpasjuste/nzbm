@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1086 $
- * $Date: 2014-08-11 00:14:03 +0200 (Mon, 11 Aug 2014) $
+ * $Revision: 1245 $
+ * $Date: 2015-03-26 23:28:30 +0100 (jeu. 26 mars 2015) $
  *
  */
 
@@ -49,7 +49,7 @@ private:
 public:
 	void				NZBCompleted(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
 	void				NZBFound(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo);
-	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, bool bGood);
+	void				HistoryMark(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, NZBInfo::EMarkStatus eMarkStatus);
 	EDupeStatus			GetDupeStatus(DownloadQueue* pDownloadQueue, const char* szName, const char* szDupeKey);
 };
 

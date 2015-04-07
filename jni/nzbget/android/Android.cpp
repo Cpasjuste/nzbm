@@ -18,7 +18,7 @@
 
 const char* svn_version(void)
 {
-	const char* SVN_Version = "508";
+	const char* SVN_Version = "1253";
 	return SVN_Version;
 }
 

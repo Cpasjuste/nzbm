@@ -9,7 +9,7 @@ public class Nzbget
 	private boolean running = false;
 	private Thread thread = null;
 	
-	public boolean start()
+	public boolean start(final String configPath)
 	{
 		if( running || thread != null )
 		{
@@ -26,7 +26,7 @@ public class Nzbget
 
 				// Run !
 				String[] args = { 
-						"none", "-n", "-s", "-c", Paths.config };
+						"none", "-n", "-s", "-c", configPath };
 				int ret = main( args );
 	
 				// Stopped

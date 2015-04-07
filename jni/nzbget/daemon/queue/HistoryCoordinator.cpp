@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * $Revision: 951 $
- * $Date: 2014-10-14 18:12:25 +0200 (Tue, 14 Oct 2014) $
+ * $Date: 2015-03-26 23:28:30 +0100 (jeu. 26 mars 2015) $
  *
  */
 
@@ -228,7 +228,7 @@ void HistoryCoordinator::AddToHistory(DownloadQueue* pDownloadQueue, NZBInfo* pN
 		pNZBInfo->GetFileList()->Clear();
 	}
 
-	info("Collection %s added to history", pNZBInfo->GetName());
+	pNZBInfo->PrintMessage(Message::mkInfo, "Collection %s added to history", pNZBInfo->GetName());
 }
 
 void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo* pHistoryInfo, int rindex)
@@ -250,6 +250,7 @@ void HistoryCoordinator::HistoryHide(DownloadQueue* pDownloadQueue, HistoryInfo*
 	pDupInfo->SetStatus(
 		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksGood ? DupInfo::dsGood :
 		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksBad ? DupInfo::dsBad :
+		pHistoryInfo->GetNZBInfo()->GetMarkStatus() == NZBInfo::ksSuccess ? DupInfo::dsSuccess :
 		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsDupe ? DupInfo::dsDupe :
 		pHistoryInfo->GetNZBInfo()->GetDeleteStatus() == NZBInfo::dsManual ? DupInfo::dsDeleted :
 		pHistoryInfo->GetNZBInfo()->IsDupeSuccess() ? DupInfo::dsSuccess :
@@ -277,6 +278,8 @@ bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList
 			HistoryInfo* pHistoryInfo = *itHistory;
 			if (pHistoryInfo->GetID() == iID)
 			{
+				bOK = true;
+
 				switch (eAction)
 				{
 					case DownloadQueue::eaHistoryDelete:
@@ -294,7 +297,15 @@ bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList
 						break;
 
  					case DownloadQueue::eaHistorySetParameter:
-						HistorySetParameter(pHistoryInfo, szText);
+						bOK = HistorySetParameter(pHistoryInfo, szText);
+						break;
+
+ 					case DownloadQueue::eaHistorySetCategory:
+						bOK = HistorySetCategory(pHistoryInfo, szText);
+						break;
+
+ 					case DownloadQueue::eaHistorySetName:
+						bOK = HistorySetName(pHistoryInfo, szText);
 						break;
 
 					case DownloadQueue::eaHistorySetDupeKey:
@@ -305,8 +316,15 @@ bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList
 						break;
 
 					case DownloadQueue::eaHistoryMarkBad:
+						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, NZBInfo::ksBad);
+						break;
+
 					case DownloadQueue::eaHistoryMarkGood:
-						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, eAction == DownloadQueue::eaHistoryMarkGood);
+						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, NZBInfo::ksGood);
+						break;
+
+					case DownloadQueue::eaHistoryMarkSuccess:
+						g_pDupeCoordinator->HistoryMark(pDownloadQueue, pHistoryInfo, NZBInfo::ksSuccess);
 						break;
 
 					default:
@@ -314,7 +332,6 @@ bool HistoryCoordinator::EditList(DownloadQueue* pDownloadQueue, IDList* pIDList
 						break;
 				}
 
-				bOK = true;
 				break;
 			}
 		}
@@ -440,7 +457,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 
 	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
 	{
-		NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
+		pNZBInfo = pHistoryInfo->GetNZBInfo();
 		pHistoryInfo->DiscardNZBInfo();
 		pNZBInfo->SetUrlStatus(NZBInfo::lsNone);
 		pNZBInfo->SetDeleteStatus(NZBInfo::dsNone);
@@ -449,7 +466,7 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 
 	pDownloadQueue->GetHistory()->erase(itHistory);
 	// the object "pHistoryInfo" is released few lines later, after the call to "NZBDownloaded"
-	info("%s returned from history back to download queue", szNiceName);
+	pNZBInfo->PrintMessage(Message::mkInfo, "%s returned from history back to download queue", szNiceName);
 
 	if (bReprocess)
 	{
@@ -464,12 +481,26 @@ void HistoryCoordinator::HistoryReturn(DownloadQueue* pDownloadQueue, HistoryLis
 void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, HistoryList::iterator itHistory,
 	HistoryInfo* pHistoryInfo, bool bRestorePauseState)
 {
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	{
+		HistoryReturn(pDownloadQueue, itHistory, pHistoryInfo, false);
+		return;
+	}
+
+	if (pHistoryInfo->GetKind() != HistoryInfo::hkNzb)
+	{
+		char szNiceName[1024];
+		pHistoryInfo->GetName(szNiceName, 1024);
+		error("Could not return %s from history back to queue: history item has wrong type", szNiceName);
+		return;
+	}
+
 	NZBInfo* pNZBInfo = pHistoryInfo->GetNZBInfo();
 	bool bPaused = bRestorePauseState && pNZBInfo->GetDeletePaused();
 
 	if (!Util::FileExists(pNZBInfo->GetQueuedFilename()))
 	{
-		error("Could not return collection %s from history back to queue: could not find source nzb-file %s",
+		error("Could not return %s from history back to queue: could not find source nzb-file %s",
 			pNZBInfo->GetName(), pNZBInfo->GetQueuedFilename());
 		return;
 	}
@@ -477,12 +508,12 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 	NZBFile* pNZBFile = NZBFile::Create(pNZBInfo->GetQueuedFilename(), "");
 	if (pNZBFile == NULL)
 	{
-		error("Could not return collection %s from history back to queue: could not parse nzb-file",
+		error("Could not return %s from history back to queue: could not parse nzb-file",
 			pNZBInfo->GetName());
 		return;
 	}
 
-	info("Returning collection %s from history back to queue", pNZBInfo->GetName());
+	info("Returning %s from history back to queue", pNZBInfo->GetName());
 
 	for (FileList::iterator it = pNZBFile->GetNZBInfo()->GetFileList()->begin(); it != pNZBFile->GetNZBInfo()->GetFileList()->end(); it++)
 	{
@@ -538,7 +569,7 @@ void HistoryCoordinator::HistoryRedownload(DownloadQueue* pDownloadQueue, Histor
 	g_pPrePostProcessor->NZBAdded(pDownloadQueue, pNZBInfo);
 }
 
-void HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText)
+bool HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const char* szText)
 {
 	char szNiceName[1024];
 	pHistoryInfo->GetName(szNiceName, 1024);
@@ -547,7 +578,7 @@ void HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const ch
 	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl))
 	{
 		error("Could not set post-process-parameter for %s: history item has wrong type", szNiceName);
-		return;
+		return false;
 	}
 
 	char* szStr = strdup(szText);
@@ -565,6 +596,49 @@ void HistoryCoordinator::HistorySetParameter(HistoryInfo* pHistoryInfo, const ch
 	}
 
 	free(szStr);
+
+	return true;
+}
+
+bool HistoryCoordinator::HistorySetCategory(HistoryInfo* pHistoryInfo, const char* szText)
+{
+	char szNiceName[1024];
+	pHistoryInfo->GetName(szNiceName, 1024);
+	debug("Setting category '%s' for '%s'", szText, szNiceName);
+
+	if (!(pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl))
+	{
+		error("Could not set category for %s: history item has wrong type", szNiceName);
+		return false;
+	}
+
+	pHistoryInfo->GetNZBInfo()->SetCategory(szText);
+
+	return true;
+}
+
+bool HistoryCoordinator::HistorySetName(HistoryInfo* pHistoryInfo, const char* szText)
+{
+	char szNiceName[1024];
+	pHistoryInfo->GetName(szNiceName, 1024);
+	debug("Setting name '%s' for '%s'", szText, szNiceName);
+
+	if (Util::EmptyStr(szText))
+	{
+		error("Could not rename %s. The new name cannot be empty", szNiceName);
+		return false;
+	}
+
+	if (pHistoryInfo->GetKind() == HistoryInfo::hkNzb || pHistoryInfo->GetKind() == HistoryInfo::hkUrl)
+	{
+		pHistoryInfo->GetNZBInfo()->SetName(szText);
+	}
+	else if (pHistoryInfo->GetKind() == HistoryInfo::hkDup)
+	{
+		pHistoryInfo->GetDupInfo()->SetName(szText);
+	}
+
+	return true;
 }
 
 void HistoryCoordinator::HistorySetDupeParam(HistoryInfo* pHistoryInfo, DownloadQueue::EEditAction eAction, const char* szText)

@@ -114,13 +114,13 @@
 #define PACKAGE_NAME "nzbget"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "nzbget 14.0"
+#define PACKAGE_STRING "nzbget 15.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "nzbget"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "14.0"
+#define PACKAGE_VERSION "15.0"
 
 /* Define to 1 to install an empty signal handler for SIGCHLD */
 #define SIGCHLD_HANDLER 1
@@ -132,7 +132,7 @@
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "14.0"
+#define VERSION "15.0"
 
 #define HAVE_REGEX_H 1
 

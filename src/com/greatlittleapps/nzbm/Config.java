@@ -9,6 +9,8 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 
+import android.content.Context;
+
 import com.greatlittleapps.utility.Utility;
 
 
@@ -18,8 +20,9 @@ public class Config
 	private String string = null;
 	
 	private int versionCode = 0;
-	private String mainDir = Paths.nzbget;
-	private String downloadDir = Paths.nzbget;
+	private String mainDir;
+	private String downloadDir;
+	private String interDir;
 	private String webDir = "";
 	private String unrarCmd = "";
 	private String controlUsername = "nzbget";
@@ -27,13 +30,15 @@ public class Config
 	private String controlPort = "6789";
 	private String outputMode = "loggable";
 	private String logFile = mainDir + "/nzbget.log";
+	public Paths paths;
 	
-	public Config( String pPath )
+	public Config( Context ctx )
 	{
-		file = new File( pPath );
+		paths = new Paths(ctx);
+		file = new File(paths.config );
 		if( !file.exists() )
 		{
-			Utility.log( "could not find nzbget config file: " + pPath );
+			Utility.log( "could not find nzbget config file: " + paths.config );
 			return;
 		}
 		load();
@@ -94,6 +99,16 @@ public class Config
 	{
 		this.string = this.string.replace( "DestDir="+this.downloadDir, "DestDir="+path );
 		this.downloadDir = path;
+	}
+	
+	public String getInterDir()
+	{
+		return this.interDir;
+	}
+	public void setInterDir( String path )
+	{
+		this.string = this.string.replace( "InterDir="+this.interDir, "InterDir="+path );
+		this.interDir = path;
 	}
 	
 	public String getWebDir()
@@ -159,6 +174,7 @@ public class Config
 		
 		if( string != null )
 		{
+			/*
 			try
 			{
 				start = string.indexOf( "VersionCode=" ) + "VersionCode=".length();
@@ -170,6 +186,7 @@ public class Config
 				versionCode = 0;
 				Utility.loge("VersionCode not found !");
 			}
+			*/
 			
 			start = string.indexOf( "ControlPort=" ) + "ControlPort=".length();
 			end = string.indexOf( '\n', start );
@@ -191,6 +208,10 @@ public class Config
 			end = string.indexOf( '\n', start );
 			downloadDir = string.substring( start, end );
 			
+			start = string.indexOf( "InterDir=" ) + "InterDir=".length();
+			end = string.indexOf( '\n', start );
+			this.interDir = string.substring( start, end );
+			
 			start = string.indexOf( "WebDir=" ) + "WebDir=".length();
 			end = string.indexOf( '\n', start );
 			webDir = string.substring( start, end );
@@ -209,16 +230,17 @@ public class Config
 			
 			//initialize mainDir to "sdcard/nzbget" if none is set
 			if( mainDir.equals( "~/downloads" )
-					|| !new File( Paths.nzbget ).exists() )
+					|| !new File( paths.nzbget ).exists() )
 			{
 				Utility.log( "mainDir not set, setting to default" );
-				new File( Paths.nzbget ).mkdirs();
-				this.setMainDir( Paths.nzbget );
-				this.setDownloadDir( Paths.download );
-				this.setWebDir( Paths.webui );
-				this.setunrarCmd( Paths.unrar+"/unrar" );
+				new File( paths.nzbget ).mkdirs();
+				this.setMainDir( paths.nzbget );
+				this.setDownloadDir( paths.download );
+				this.setInterDir(paths.download+"/nzbtemp");
+				this.setWebDir( paths.webui );
+				this.setunrarCmd( paths.unrar+"/unrar" );
 				this.setOutputmode( "loggable" );
-				this.setLogFile( Paths.nzbget + "/nzbget.log" );
+				this.setLogFile( paths.nzbget + "/nzbget.log" );
 				this.save();
 			}
 			

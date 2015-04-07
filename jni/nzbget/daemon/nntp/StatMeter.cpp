@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2014-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1042 $
- * $Date: 2014-06-12 22:57:00 +0200 (Thu, 12 Jun 2014) $
+ * $Revision: 1238 $
+ * $Date: 2015-03-21 17:12:01 +0100 (sam. 21 mars 2015) $
  *
  */
 
@@ -40,6 +40,7 @@
 #include "Options.h"
 #include "ServerPool.h"
 #include "DiskState.h"
+#include "Util.h"
 
 extern ServerPool* g_pServerPool;
 extern Options* g_pOptions;
@@ -171,43 +172,42 @@ void ServerVolume::LogDebugInfo()
 {
 	info("   ---------- ServerVolume");
 
-	char szSec[4000];
+	StringBuilder msg;
 
-	szSec[0] = '\0';
 	for (int i = 0; i < 60; i++)
 	{
-		char szNum[20];
-		snprintf(szNum, 20, "[%i]=%lli ", i, m_BytesPerSeconds[i]);
-		strncat(szSec, szNum, 4000);
+		char szNum[30];
+		snprintf(szNum, 30, "[%i]=%lli ", i, m_BytesPerSeconds[i]);
+		msg.Append(szNum);
 	}
-	info("Secs: %s", szSec);
+	info("Secs: %s", msg.GetBuffer());
 
-	szSec[0] = '\0';
+	msg.Clear();
 	for (int i = 0; i < 60; i++)
 	{
-		char szNum[20];
-		snprintf(szNum, 20, "[%i]=%lli ", i, m_BytesPerMinutes[i]);
-		strncat(szSec, szNum, 4000);
+		char szNum[30];
+		snprintf(szNum, 30, "[%i]=%lli ", i, m_BytesPerMinutes[i]);
+		msg.Append(szNum);
 	}
-	info("Mins: %s", szSec);
+	info("Mins: %s", msg.GetBuffer());
 
-	szSec[0] = '\0';
+	msg.Clear();
 	for (int i = 0; i < 24; i++)
 	{
-		char szNum[20];
-		snprintf(szNum, 20, "[%i]=%lli ", i, m_BytesPerHours[i]);
-		strncat(szSec, szNum, 4000);
+		char szNum[30];
+		snprintf(szNum, 30, "[%i]=%lli ", i, m_BytesPerHours[i]);
+		msg.Append(szNum);
 	}
-	info("Hours: %s", szSec);
+	info("Hours: %s", msg.GetBuffer());
 
-	szSec[0] = '\0';
+	msg.Clear();
 	for (int i = 0; i < (int)m_BytesPerDays.size(); i++)
 	{
-		char szNum[20];
-		snprintf(szNum, 20, "[%i]=%lli ", m_iFirstDay + i, m_BytesPerDays[i]);
-		strncat(szSec, szNum, 4000);
+		char szNum[30];
+		snprintf(szNum, 30, "[%i]=%lli ", m_iFirstDay + i, m_BytesPerDays[i]);
+		msg.Append(szNum);
 	}
-	info("Days: %s", szSec);
+	info("Days: %s", msg.GetBuffer());
 }
 
 StatMeter::StatMeter()
@@ -356,9 +356,7 @@ void StatMeter::CalcTotalStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllB
 	m_mutexStat.Unlock();
 }
 
-/*
- * NOTE: see note to "AddSpeedReading"
- */
+// Average speed in last 30 seconds
 int StatMeter::CalcCurrentDownloadSpeed()
 {
 	if (m_bStandBy)
@@ -375,6 +373,14 @@ int StatMeter::CalcCurrentDownloadSpeed()
 	return (int)(m_iSpeedTotalBytes / iTimeDiff);
 }
 
+// Amount of data downloaded in current second
+int StatMeter::CalcMomentaryDownloadSpeed()
+{
+	time_t tCurTime = time(NULL);
+	int iSpeed = tCurTime == m_tCurSecTime ? m_iCurSecBytes : 0;
+	return iSpeed;
+}
+
 void StatMeter::AddSpeedReading(int iBytes)
 {
 	time_t tCurTime = time(NULL);
@@ -388,6 +394,13 @@ void StatMeter::AddSpeedReading(int iBytes)
 		m_mutexSpeed.Lock();
 #endif
 	}
+
+	if (tCurTime != m_tCurSecTime)
+	{
+		m_tCurSecTime =	tCurTime;
+		m_iCurSecBytes = 0;
+	}
+	m_iCurSecBytes += iBytes;
 
 	while (iNowSlot > m_iSpeedTime[m_iSpeedBytesIndex])
 	{
@@ -452,6 +465,8 @@ void StatMeter::ResetSpeedStat()
 	m_iSpeedBytesIndex = 0;
 	m_iSpeedTotalBytes = 0;
 	m_tSpeedCorrection = tCurTime;
+	m_tCurSecTime =	0;
+	m_iCurSecBytes = 0;
 }
 
 void StatMeter::LogDebugInfo()

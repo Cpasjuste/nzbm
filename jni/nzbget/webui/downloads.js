@@ -1,7 +1,7 @@
 /*
  * This file is part of nzbget
  *
- * Copyright (C) 2012-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ * Copyright (C) 2012-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1112 $
- * $Date: 2014-08-28 22:51:29 +0200 (Thu, 28 Aug 2014) $
+ * $Revision: 1236 $
+ * $Date: 2015-03-20 21:02:44 +0100 (ven. 20 mars 2015) $
  *
  */
 
@@ -79,7 +79,7 @@ var Downloads = (new function($)
 		$DownloadsRecordsPerPage = $('#DownloadsRecordsPerPage');
 		$DownloadsTable_Name = $('#DownloadsTable_Name');
 
-		var recordsPerPage = UISettings.read('$DownloadsRecordsPerPage', 10);
+		var recordsPerPage = UISettings.read('DownloadsRecordsPerPage', 10);
 		$DownloadsRecordsPerPage.val(recordsPerPage);
 
 		$DownloadsTable.fasttable(
@@ -100,8 +100,8 @@ var Downloads = (new function($)
 			});
 
 		$DownloadsTable.on('click', 'a', itemClick);
-		$DownloadsTable.on('click', 'tbody div.check',
-			function(event) { $DownloadsTable.fasttable('itemCheckClick', this.parentNode.parentNode, event); });
+		$DownloadsTable.on('click', UISettings.rowSelect ? 'tbody tr' : 'tbody div.check',
+			function(event) { $DownloadsTable.fasttable('itemCheckClick', UISettings.rowSelect ? this : this.parentNode.parentNode, event); });
 		$DownloadsTable.on('click', 'thead div.check',
 			function() { $DownloadsTable.fasttable('titleCheckClick') });
 		$DownloadsTable.on('mousedown', Util.disableShiftMouseDown);
@@ -109,7 +109,7 @@ var Downloads = (new function($)
 
 	this.applyTheme = function()
 	{
-		$DownloadsTable.fasttable('setPageSize', UISettings.read('$DownloadsRecordsPerPage', 10),
+		$DownloadsTable.fasttable('setPageSize', UISettings.read('DownloadsRecordsPerPage', 10),
 			UISettings.miniTheme ? 1 : 5, !UISettings.miniTheme);
 	}
 
@@ -120,7 +120,7 @@ var Downloads = (new function($)
 			$('#DownloadsTable_Category').css('width', DownloadsUI.calcCategoryColumnWidth());
 		}
 		
-		RPC.call('listgroups', [100], groups_loaded);
+		RPC.call('listgroups', [], groups_loaded);
 	}
 
 	function groups_loaded(_groups)
@@ -303,7 +303,7 @@ var Downloads = (new function($)
 	this.recordsPerPageChange = function()
 	{
 		var val = $DownloadsRecordsPerPage.val();
-		UISettings.write('$DownloadsRecordsPerPage', val);
+		UISettings.write('DownloadsRecordsPerPage', val);
 		$DownloadsTable.fasttable('setPageSize', val);
 	}
 
@@ -334,6 +334,7 @@ var Downloads = (new function($)
 	function itemClick(e)
 	{
 		e.preventDefault();
+		e.stopPropagation();
 		var nzbid = $(this).attr('data-nzbid');
 		var area = $(this).attr('data-area');
 		$(this).blur();
@@ -352,7 +353,7 @@ var Downloads = (new function($)
 
 	/*** CHECKMARKS ******************************************************/
 
-	function checkBuildEditIDList(allowPostProcess, allowUrl)
+	function checkBuildEditIDList(allowPostProcess, allowUrl, allowEmpty)
 	{
 		var checkedRows = $DownloadsTable.fasttable('checkedRows');
 
@@ -378,7 +379,7 @@ var Downloads = (new function($)
 			}
 		}
 
-		if (checkedEditIDs.length === 0)
+		if (checkedEditIDs.length === 0 && !allowEmpty)
 		{
 			Notification.show('#Notif_Downloads_Select');
 			return null;
@@ -546,6 +547,13 @@ var Downloads = (new function($)
 		notification = '';
 		RPC.call('editqueue', [EditAction, EditOffset, '', checkedEditIDs], editCompleted);
 	}
+
+	this.sort = function(order)
+	{
+		var checkedEditIDs = checkBuildEditIDList(true, true, true);
+		notification = '#Notif_Downloads_Sorted';
+		RPC.call('editqueue', ['GroupSort', 0, order, checkedEditIDs], editCompleted);
+	}
 }(jQuery));
 
 
@@ -703,26 +711,13 @@ var DownloadsUI = (new function($)
 		{
 			switch (group.Status)
 			{
-				case "REPAIRING":
-					break;
 				case "LOADING_PARS":
 				case "VERIFYING_SOURCES":
 				case "VERIFYING_REPAIRED":
 				case "UNPACKING":
 				case "RENAMING":
-					text = group.PostInfoText;
-					break;
 				case "EXECUTING_SCRIPT":
-					if (group.Log && group.Log.length > 0)
-					{
-						text = group.Log[group.Log.length-1].Text;
-						// remove "for <nzb-name>" from label text
-						text = text.replace(' for ' + group.NZBName, ' ');
-					}
-					else
-					{
-						text = group.PostInfoText;
-					}
+					text = group.PostInfoText;
 					break;
 			}
 		}

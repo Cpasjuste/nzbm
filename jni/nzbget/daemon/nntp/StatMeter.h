@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1042 $
- * $Date: 2014-06-12 22:57:00 +0200 (Thu, 12 Jun 2014) $
+ * $Revision: 1238 $
+ * $Date: 2015-03-21 17:12:01 +0100 (sam. 21 mars 2015) $
  *
  */
 
@@ -93,6 +93,8 @@ private:
 	int					m_iSpeedStartTime; 
 	time_t				m_tSpeedCorrection;
 	int					m_iSpeedBytesIndex;
+	int					m_iCurSecBytes;
+	time_t				m_tCurSecTime;
 #ifdef HAVE_SPINLOCK
 	SpinLock			m_spinlockSpeed;
 #else
@@ -125,6 +127,7 @@ public:
 						~StatMeter();
 	void				Init();
 	int					CalcCurrentDownloadSpeed();
+	int					CalcMomentaryDownloadSpeed();
 	void				AddSpeedReading(int iBytes);
 	void				AddServerData(int iBytes, int iServerID);
 	void				CalcTotalStat(int* iUpTimeSec, int* iDnTimeSec, long long* iAllBytes, bool* bStandBy);

@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1109 $
- * $Date: 2014-08-28 21:31:31 +0200 (Thu, 28 Aug 2014) $
+ * $Revision: 1252 $
+ * $Date: 2015-04-03 11:55:28 +0200 (ven. 03 avril 2015) $
  *
  */
 
@@ -366,10 +366,6 @@ WebDownloader::EStatus WebDownloader::DownloadHeaders()
 		// detect body of response
 		if (*line == '\r' || *line == '\n')
 		{
-			if (m_iContentLen == -1 && !m_bGZip)
-			{
-				warn("URL %s: Content-Length is not submitted by server, cannot verify whether the file is complete", m_szInfoName);
-			}
 			break;
 		}
 
@@ -420,10 +416,10 @@ WebDownloader::EStatus WebDownloader::DownloadBody()
 			szBuffer = szLineBuf;
 		}
 
-		// Have we encountered a timeout?
+		// Connection closed or timeout?
 		if (iLen <= 0)
 		{
-			if (m_iContentLen == -1 && iWrittenLen > 0)
+			if (iLen == 0 && m_iContentLen == -1 && iWrittenLen > 0)
 			{
 				bEnd = true;
 				break;

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2008-2013 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2008-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 956 $
- * $Date: 2014-02-24 23:11:14 +0100 (Mon, 24 Feb 2014) $
+ * $Revision: 1251 $
+ * $Date: 2015-04-03 11:44:06 +0200 (ven. 03 avril 2015) $
  *
  */
 
@@ -35,6 +35,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #ifdef WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -283,6 +284,8 @@ TLSSocket::~TLSSocket()
 
 void TLSSocket::ReportError(const char* szErrMsg)
 {
+	char szMessage[1024];
+
 #ifdef HAVE_LIBGNUTLS
 	const char* errstr = gnutls_strerror(m_iRetCode);
 	if (m_bSuppressErrors)
@@ -291,7 +294,9 @@ void TLSSocket::ReportError(const char* szErrMsg)
 	}
 	else
 	{
-		error("%s: %s", szErrMsg, errstr);
+		snprintf(szMessage, sizeof(szMessage), "%s: %s", szErrMsg, errstr);
+		szMessage[sizeof(szMessage) - 1] = '\0';
+		PrintError(szMessage);
 	}
 #endif /* HAVE_LIBGNUTLS */
 
@@ -311,14 +316,21 @@ void TLSSocket::ReportError(const char* szErrMsg)
 		}
 		else if (errcode != 0)
 		{
-			error("%s: %s", szErrMsg, errstr);
+			snprintf(szMessage, sizeof(szMessage), "%s: %s", szErrMsg, errstr);
+			szMessage[sizeof(szMessage) - 1] = '\0';
+			PrintError(szMessage);
 		}
 		else
 		{
-			error("%s", szErrMsg);
+			PrintError(szErrMsg);
 		}
 	} while (errcode);
 #endif /* HAVE_OPENSSL */
+}
+
+void TLSSocket::PrintError(const char* szErrMsg)
+{
+	error("%s", szErrMsg);
 }
 
 bool TLSSocket::Start()

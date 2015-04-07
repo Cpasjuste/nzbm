@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1151 $
- * $Date: 2014-11-01 12:00:40 +0100 (Sat, 01 Nov 2014) $
+ * $Revision: 1245 $
+ * $Date: 2015-03-26 23:28:30 +0100 (jeu. 26 mars 2015) $
  *
  */
 
@@ -35,11 +35,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <set>
 #ifdef WIN32
 #include <direct.h>
+#include <Shlobj.h>
 #else
 #include <unistd.h>
 #include <getopt.h>
@@ -60,6 +62,10 @@ extern ServerPool* g_pServerPool;
 extern Scheduler* g_pScheduler;
 extern FeedCoordinator* g_pFeedCoordinator;
 
+#ifdef WIN32
+extern void SetupFirstStart();
+#endif
+
 #ifdef HAVE_GETOPT_LONG
 static struct option long_options[] =
     {
@@ -77,7 +83,7 @@ static struct option long_options[] =
 	    {"pause", no_argument, 0, 'P'},
 	    {"unpause", no_argument, 0, 'U'},
 	    {"rate", required_argument, 0, 'R'},
-	    {"debug", no_argument, 0, 'B'},
+	    {"system", no_argument, 0, 'B'},
 	    {"log", required_argument, 0, 'G'},
 	    {"top", no_argument, 0, 'T'},
 	    {"edit", required_argument, 0, 'E'},
@@ -120,6 +126,10 @@ static const char* OPTION_CONTROLIP				= "ControlIp";
 static const char* OPTION_CONTROLPORT			= "ControlPort";
 static const char* OPTION_CONTROLUSERNAME		= "ControlUsername";
 static const char* OPTION_CONTROLPASSWORD		= "ControlPassword";
+static const char* OPTION_RESTRICTEDUSERNAME	= "RestrictedUsername";
+static const char* OPTION_RESTRICTEDPASSWORD	= "RestrictedPassword";
+static const char* OPTION_ADDUSERNAME			= "AddUsername";
+static const char* OPTION_ADDPASSWORD			= "AddPassword";
 static const char* OPTION_SECURECONTROL			= "SecureControl";
 static const char* OPTION_SECUREPORT			= "SecurePort";
 static const char* OPTION_SECURECERT			= "SecureCert";
@@ -129,7 +139,8 @@ static const char* OPTION_ARTICLETIMEOUT		= "ArticleTimeout";
 static const char* OPTION_URLTIMEOUT			= "UrlTimeout";
 static const char* OPTION_SAVEQUEUE				= "SaveQueue";
 static const char* OPTION_RELOADQUEUE			= "ReloadQueue";
-static const char* OPTION_CREATEBROKENLOG		= "CreateBrokenLog";
+static const char* OPTION_BROKENLOG				= "BrokenLog";
+static const char* OPTION_NZBLOG				= "NzbLog";
 static const char* OPTION_DECODE				= "Decode";
 static const char* OPTION_RETRIES				= "Retries";
 static const char* OPTION_RETRYINTERVAL			= "RetryInterval";
@@ -176,6 +187,7 @@ static const char* OPTION_UNPACK				= "Unpack";
 static const char* OPTION_UNPACKCLEANUPDISK		= "UnpackCleanupDisk";
 static const char* OPTION_UNRARCMD				= "UnrarCmd";
 static const char* OPTION_SEVENZIPCMD			= "SevenZipCmd";
+static const char* OPTION_UNPACKPASSFILE		= "UnpackPassFile";
 static const char* OPTION_UNPACKPAUSEQUEUE		= "UnpackPauseQueue";
 static const char* OPTION_SCRIPTORDER			= "ScriptOrder";
 static const char* OPTION_POSTSCRIPT			= "PostScript";
@@ -270,6 +282,29 @@ void Options::OptEntry::SetValue(const char* szValue)
 	{
 		m_szDefValue = strdup(szValue);
 	}
+}
+
+bool Options::OptEntry::Restricted()
+{
+	char szLoName[256];
+	strncpy(szLoName, m_szName, sizeof(szLoName));
+	szLoName[256-1] = '\0';
+	for (char* p = szLoName; *p; p++) *p = tolower(*p); // convert string to lowercase
+
+	bool bRestricted = !strcasecmp(m_szName, OPTION_CONTROLIP) ||
+		!strcasecmp(m_szName, OPTION_CONTROLPORT) ||
+		!strcasecmp(m_szName, OPTION_SECURECONTROL) ||
+		!strcasecmp(m_szName, OPTION_SECUREPORT) ||
+		!strcasecmp(m_szName, OPTION_SECURECERT) ||
+		!strcasecmp(m_szName, OPTION_SECUREKEY) ||
+		!strcasecmp(m_szName, OPTION_AUTHORIZEDIP) ||
+		!strcasecmp(m_szName, OPTION_DAEMONUSERNAME) ||
+		!strcasecmp(m_szName, OPTION_UMASK) ||
+		strchr(m_szName, ':') ||			// All extension script options
+		strstr(szLoName, "username") ||		// ServerX.Username, ControlUsername, etc.
+		strstr(szLoName, "password");		// ServerX.Password, ControlPassword, etc.
+
+	return bRestricted;
 }
 
 Options::OptEntries::~OptEntries()
@@ -448,7 +483,7 @@ Options::Script* Options::Scripts::Find(const char* szName)
 }
 
 
-Options::Options(int argc, char* argv[])
+Options::Options()
 {
 	m_bConfigErrors = false;
 	m_iConfigLine = 0;
@@ -456,6 +491,7 @@ Options::Options(int argc, char* argv[])
 	// initialize options with default values
 	m_bConfigInitialized	= false;
 	m_szConfigFilename		= NULL;
+	m_szAppDir				= NULL;
 	m_szDestDir				= NULL;
 	m_szInterDir			= NULL;
 	m_szTempDir				= NULL;
@@ -474,7 +510,8 @@ Options::Options(int argc, char* argv[])
 	m_bPausePostProcess		= false;
 	m_bPauseScan			= false;
 	m_bTempPauseDownload	= false;
-	m_bCreateBrokenLog		= false;
+	m_bBrokenLog			= false;
+	m_bNzbLog				= false;
 	m_iDownloadRate			= 0;
 	m_iEditQueueAction		= 0;
 	m_pEditQueueIDList		= NULL;
@@ -495,6 +532,9 @@ Options::Options(int argc, char* argv[])
 	m_bRemoteClientMode		= false;
 	m_bPrintOptions			= false;
 	m_bAddTop				= false;
+	m_szAddDupeKey			= NULL;
+	m_iAddDupeScore			= 0;
+	m_iAddDupeMode			= 0;
 	m_bAppendCategoryDir	= false;
 	m_bContinuePartial		= false;
 	m_bSaveQueue			= false;
@@ -505,6 +545,10 @@ Options::Options(int argc, char* argv[])
 	m_szControlIP			= NULL;
 	m_szControlUsername		= NULL;
 	m_szControlPassword		= NULL;
+	m_szRestrictedUsername	= NULL;
+	m_szRestrictedPassword	= NULL;
+	m_szAddUsername			= NULL;
+	m_szAddPassword			= NULL;
 	m_bSecureControl		= false;
 	m_iSecurePort			= 0;
 	m_szSecureCert			= NULL;
@@ -547,6 +591,8 @@ Options::Options(int argc, char* argv[])
 	m_bParCleanupQueue		= false;
 	m_iDiskSpace			= 0;
 	m_bTestBacktrace		= false;
+	m_bWebGet				= false;
+	m_szWebGetFilename		= NULL;
 	m_bTLS					= false;
 	m_bDumpCore				= false;
 	m_bParPauseQueue		= false;
@@ -562,6 +608,7 @@ Options::Options(int argc, char* argv[])
 	m_bUnpackCleanupDisk	= false;
 	m_szUnrarCmd			= NULL;
 	m_szSevenZipCmd			= NULL;
+	m_szUnpackPassFile		= NULL;
 	m_bUnpackPauseQueue		= false;
 	m_szExtCleanupDisk		= NULL;
 	m_szParIgnoreExt		= NULL;
@@ -572,7 +619,60 @@ Options::Options(int argc, char* argv[])
 	m_iPropagationDelay		= 0;
 	m_iArticleCache			= 0;
 	m_iEventInterval		= 0;
+}
 
+Options::~Options()
+{
+	free(m_szConfigFilename);
+	free(m_szAppDir);
+	free(m_szDestDir);
+	free(m_szInterDir);
+	free(m_szTempDir);
+	free(m_szQueueDir);
+	free(m_szNzbDir);
+	free(m_szWebDir);
+	free(m_szConfigTemplate);
+	free(m_szScriptDir);
+	free(m_szArgFilename);
+	free(m_szAddCategory);
+	free(m_szEditQueueText);
+	free(m_szLastArg);
+	free(m_szControlIP);
+	free(m_szControlUsername);
+	free(m_szControlPassword);
+	free(m_szRestrictedUsername);
+	free(m_szRestrictedPassword);
+	free(m_szAddUsername);
+	free(m_szAddPassword);
+	free(m_szSecureCert);
+	free(m_szSecureKey);
+	free(m_szAuthorizedIP);
+	free(m_szLogFile);
+	free(m_szLockFile);
+	free(m_szDaemonUsername);
+	free(m_szScriptOrder);
+	free(m_szPostScript);
+	free(m_szScanScript);
+	free(m_szQueueScript);
+	free(m_pEditQueueIDList);
+	free(m_szAddNZBFilename);
+	free(m_szAddDupeKey);
+	free(m_szUnrarCmd);
+	free(m_szSevenZipCmd);
+	free(m_szUnpackPassFile);
+	free(m_szExtCleanupDisk);
+	free(m_szParIgnoreExt);
+	free(m_szWebGetFilename);
+
+	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
+	{
+		free(*it);
+	}
+	m_EditQueueNameList.clear();
+}
+
+void Options::Init(int argc, char* argv[])
+{
 	// Option "ConfigFile" will be initialized later, but we want
 	// to see it at the top of option list, so we add it first
 	SetOption(OPTION_CONFIGFILE, "");
@@ -588,6 +688,7 @@ Options::Options(int argc, char* argv[])
 	char* end = strrchr(szFilename, PATH_SEPARATOR);
 	if (end) *end = '\0';
 	SetOption(OPTION_APPDIR, szFilename);
+	m_szAppDir = strdup(szFilename);
 
 	SetOption(OPTION_VERSION, Util::VersionRevision());
 
@@ -652,48 +753,6 @@ Options::Options(int argc, char* argv[])
 	}
 }
 
-Options::~Options()
-{
-	free(m_szConfigFilename);
-	free(m_szDestDir);
-	free(m_szInterDir);
-	free(m_szTempDir);
-	free(m_szQueueDir);
-	free(m_szNzbDir);
-	free(m_szWebDir);
-	free(m_szConfigTemplate);
-	free(m_szScriptDir);
-	free(m_szArgFilename);
-	free(m_szAddCategory);
-	free(m_szEditQueueText);
-	free(m_szLastArg);
-	free(m_szControlIP);
-	free(m_szControlUsername);
-	free(m_szControlPassword);
-	free(m_szSecureCert);
-	free(m_szSecureKey);
-	free(m_szAuthorizedIP);
-	free(m_szLogFile);
-	free(m_szLockFile);
-	free(m_szDaemonUsername);
-	free(m_szScriptOrder);
-	free(m_szPostScript);
-	free(m_szScanScript);
-	free(m_szQueueScript);
-	free(m_pEditQueueIDList);
-	free(m_szAddNZBFilename);
-	free(m_szUnrarCmd);
-	free(m_szSevenZipCmd);
-	free(m_szExtCleanupDisk);
-	free(m_szParIgnoreExt);
-
-	for (NameList::iterator it = m_EditQueueNameList.begin(); it != m_EditQueueNameList.end(); it++)
-	{
-		free(*it);
-	}
-	m_EditQueueNameList.clear();
-}
-
 void Options::Dump()
 {
 	for (OptEntries::iterator it = m_OptEntries.begin(); it != m_OptEntries.end(); it++)
@@ -750,8 +809,12 @@ void Options::InitDefault()
 {
 #ifdef WIN32
 	SetOption(OPTION_MAINDIR, "${AppDir}");
+	SetOption(OPTION_WEBDIR, "${AppDir}\\webui");
+	SetOption(OPTION_CONFIGTEMPLATE, "${AppDir}\\nzbget.conf.template");
 #else
 	SetOption(OPTION_MAINDIR, "~/downloads");
+	SetOption(OPTION_WEBDIR, "");
+	SetOption(OPTION_CONFIGTEMPLATE, "");
 #endif
 	SetOption(OPTION_TEMPDIR, "${MainDir}/tmp");
 	SetOption(OPTION_DESTDIR, "${MainDir}/dst");
@@ -760,8 +823,6 @@ void Options::InitDefault()
 	SetOption(OPTION_NZBDIR, "${MainDir}/nzb");
 	SetOption(OPTION_LOCKFILE, "${MainDir}/nzbget.lock");
 	SetOption(OPTION_LOGFILE, "${DestDir}/nzbget.log");
-	SetOption(OPTION_WEBDIR, "");
-	SetOption(OPTION_CONFIGTEMPLATE, "");
 	SetOption(OPTION_SCRIPTDIR, "${MainDir}/scripts");
 	SetOption(OPTION_WRITELOG, "append");
 	SetOption(OPTION_ROTATELOG, "3");
@@ -772,6 +833,10 @@ void Options::InitDefault()
 	SetOption(OPTION_CONTROLIP, "0.0.0.0");
 	SetOption(OPTION_CONTROLUSERNAME, "nzbget");
 	SetOption(OPTION_CONTROLPASSWORD, "tegbzn6789");
+	SetOption(OPTION_RESTRICTEDUSERNAME, "");
+	SetOption(OPTION_RESTRICTEDPASSWORD, "");
+	SetOption(OPTION_ADDUSERNAME, "");
+	SetOption(OPTION_ADDPASSWORD, "");
 	SetOption(OPTION_CONTROLPORT, "6789");
 	SetOption(OPTION_SECURECONTROL, "no");
 	SetOption(OPTION_SECUREPORT, "6791");
@@ -782,7 +847,8 @@ void Options::InitDefault()
 	SetOption(OPTION_URLTIMEOUT, "60");
 	SetOption(OPTION_SAVEQUEUE, "yes");
 	SetOption(OPTION_RELOADQUEUE, "yes");
-	SetOption(OPTION_CREATEBROKENLOG, "yes");
+	SetOption(OPTION_BROKENLOG, "yes");
+	SetOption(OPTION_NZBLOG, "yes");
 	SetOption(OPTION_DECODE, "yes");
 	SetOption(OPTION_RETRIES, "3");
 	SetOption(OPTION_RETRYINTERVAL, "10");
@@ -837,6 +903,7 @@ void Options::InitDefault()
 	SetOption(OPTION_UNRARCMD, "unrar");
 	SetOption(OPTION_SEVENZIPCMD, "7z");
 #endif
+	SetOption(OPTION_UNPACKPASSFILE, "");
 	SetOption(OPTION_UNPACKPAUSEQUEUE, "no");
 	SetOption(OPTION_EXTCLEANUPDISK, "");
 	SetOption(OPTION_PARIGNOREEXT, "");
@@ -859,13 +926,21 @@ void Options::InitOptFile()
 	{
 		// search for config file in default locations
 #ifdef WIN32
-		char szFilename[MAX_PATH + 1];
-		GetModuleFileName(NULL, szFilename, MAX_PATH + 1);
-		szFilename[MAX_PATH] = '\0';
-		Util::NormalizePathSeparators(szFilename);
-		char* end = strrchr(szFilename, PATH_SEPARATOR);
-		if (end) end[1] = '\0';
-		strcat(szFilename, "nzbget.conf");
+		char szFilename[MAX_PATH + 20];
+		snprintf(szFilename, sizeof(szFilename), "%s\\nzbget.conf", m_szAppDir);
+
+		if (!Util::FileExists(szFilename))
+		{
+			char szAppDataPath[MAX_PATH];
+			SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, szAppDataPath);
+			snprintf(szFilename, sizeof(szFilename), "%s\\NZBGet\\nzbget.conf", szAppDataPath);
+			szFilename[sizeof(szFilename)-1] = '\0';
+
+			if (!Util::FileExists(szFilename))
+			{
+				SetupFirstStart();
+			}
+		}
 
 		if (Util::FileExists(szFilename))
 		{
@@ -1000,6 +1075,10 @@ void Options::InitOptions()
 	m_szControlIP			= strdup(GetOption(OPTION_CONTROLIP));
 	m_szControlUsername		= strdup(GetOption(OPTION_CONTROLUSERNAME));
 	m_szControlPassword		= strdup(GetOption(OPTION_CONTROLPASSWORD));
+	m_szRestrictedUsername	= strdup(GetOption(OPTION_RESTRICTEDUSERNAME));
+	m_szRestrictedPassword	= strdup(GetOption(OPTION_RESTRICTEDPASSWORD));
+	m_szAddUsername			= strdup(GetOption(OPTION_ADDUSERNAME));
+	m_szAddPassword			= strdup(GetOption(OPTION_ADDPASSWORD));
 	m_szSecureCert			= strdup(GetOption(OPTION_SECURECERT));
 	m_szSecureKey			= strdup(GetOption(OPTION_SECUREKEY));
 	m_szAuthorizedIP		= strdup(GetOption(OPTION_AUTHORIZEDIP));
@@ -1008,6 +1087,7 @@ void Options::InitOptions()
 	m_szLogFile				= strdup(GetOption(OPTION_LOGFILE));
 	m_szUnrarCmd			= strdup(GetOption(OPTION_UNRARCMD));
 	m_szSevenZipCmd			= strdup(GetOption(OPTION_SEVENZIPCMD));
+	m_szUnpackPassFile		= strdup(GetOption(OPTION_UNPACKPASSFILE));
 	m_szExtCleanupDisk		= strdup(GetOption(OPTION_EXTCLEANUPDISK));
 	m_szParIgnoreExt		= strdup(GetOption(OPTION_PARIGNOREEXT));
 
@@ -1045,7 +1125,8 @@ void Options::InitOptions()
 
 	CheckDir(&m_szNzbDir, OPTION_NZBDIR, szMainDir, m_iNzbDirInterval == 0, true);
 
-	m_bCreateBrokenLog		= (bool)ParseEnumValue(OPTION_CREATEBROKENLOG, BoolCount, BoolNames, BoolValues);
+	m_bBrokenLog			= (bool)ParseEnumValue(OPTION_BROKENLOG, BoolCount, BoolNames, BoolValues);
+	m_bNzbLog				= (bool)ParseEnumValue(OPTION_NZBLOG, BoolCount, BoolNames, BoolValues);
 	m_bAppendCategoryDir	= (bool)ParseEnumValue(OPTION_APPENDCATEGORYDIR, BoolCount, BoolNames, BoolValues);
 	m_bContinuePartial		= (bool)ParseEnumValue(OPTION_CONTINUEPARTIAL, BoolCount, BoolNames, BoolValues);
 	m_bSaveQueue			= (bool)ParseEnumValue(OPTION_SAVEQUEUE, BoolCount, BoolNames, BoolValues);
@@ -1250,19 +1331,15 @@ void Options::InitCommandLine(int argc, char* argv[])
 				m_bDaemonMode = true;
 				break;
 			case 'A':
-				m_eClientOperation = opClientRequestDownload; // default
+				m_eClientOperation = opClientRequestDownload;
 
 				while (true)
 				{
 					optind++;
 					optarg = optind > argc ? NULL : argv[optind-1];
-					if (optarg && !strcasecmp(optarg, "F"))
+					if (optarg && (!strcasecmp(optarg, "F") || !strcasecmp(optarg, "U")))
 					{
-						m_eClientOperation = opClientRequestDownload;
-					}
-					else if (optarg && !strcasecmp(optarg, "U"))
-					{
-						m_eClientOperation = opClientRequestDownloadUrl;
+						// option ignored (but kept for compatibility)
 					}
 					else if (optarg && !strcasecmp(optarg, "T"))
 					{
@@ -1301,6 +1378,51 @@ void Options::InitCommandLine(int argc, char* argv[])
 						free(m_szAddNZBFilename);
 						m_szAddNZBFilename = strdup(argv[optind-1]);
 					}
+					else if (optarg && !strcasecmp(optarg, "DK"))
+					{
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
+						free(m_szAddDupeKey);
+						m_szAddDupeKey = strdup(argv[optind-1]);
+					}
+					else if (optarg && !strcasecmp(optarg, "DS"))
+					{
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
+						m_iAddDupeScore = atoi(argv[optind-1]);
+					}
+					else if (optarg && !strcasecmp(optarg, "DM"))
+					{
+						optind++;
+						if (optind > argc)
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
+
+						const char* szDupeMode = argv[optind-1];
+						if (!strcasecmp(szDupeMode, "score"))
+						{
+							m_iAddDupeMode = dmScore;
+						}
+						else if (!strcasecmp(szDupeMode, "all"))
+						{
+							m_iAddDupeMode = dmAll;
+						}
+						else if (!strcasecmp(szDupeMode, "force"))
+						{
+							m_iAddDupeMode = dmForce;
+						}
+						else
+						{
+							abort("FATAL ERROR: Could not parse value of option 'A'\n");
+						}
+					}
 					else
 					{
 						optind--;
@@ -1335,6 +1457,10 @@ void Options::InitCommandLine(int argc, char* argv[])
 				else if (!strcasecmp(optarg, "H"))
 				{
 					m_eClientOperation = opClientRequestHistory;
+				}
+				else if (!strcasecmp(optarg, "HA"))
+				{
+					m_eClientOperation = opClientRequestHistoryAll;
 				}
 				else
 				{
@@ -1391,6 +1517,17 @@ void Options::InitCommandLine(int argc, char* argv[])
 				else if (!strcasecmp(optarg, "trace"))
 				{
 					m_bTestBacktrace = true;
+				}
+				else if (!strcasecmp(optarg, "webget"))
+				{
+					m_bWebGet = true;
+					optind++;
+					if (optind > argc)
+					{
+						abort("FATAL ERROR: Could not parse value of option 'E'\n");
+					}
+					optarg = argv[optind-1];
+					m_szWebGetFilename = strdup(optarg);
 				}
 				else
 				{
@@ -1494,6 +1631,10 @@ void Options::InitCommandLine(int argc, char* argv[])
 					else if (!strcasecmp(optarg, "G"))
 					{
 						m_iEditQueueAction = DownloadQueue::eaHistoryMarkGood;
+					}
+					else if (!strcasecmp(optarg, "S"))
+					{
+						m_iEditQueueAction = DownloadQueue::eaHistoryMarkSuccess;
 					}
 					else
 					{
@@ -1720,16 +1861,17 @@ void Options::PrintUsage(char* com)
 	    "  -V, --serverversion       Print server's version and exit\n"
 		"  -Q, --quit                Shutdown server\n"
 		"  -O, --reload              Reload config and restart all services\n"
-		"  -A, --append  [F|U] [<options>] <nzb-file/url> Send file/url to server's\n"
+		"  -A, --append [<options>] <nzb-file/url> Send file/url to server's\n"
 		"                            download queue\n"
-		"                 F          Send file (default)\n"
-		"                 U          Send url\n"
 		"    <options> are (multiple options must be separated with space):\n"
 		"       T                    Add file to the top (beginning) of queue\n"
 		"       P                    Pause added files\n"
 		"       C <name>             Assign category to nzb-file\n"
-		"       N <name>             Use this name as nzb-filename (only for URLs)\n"
+		"       N <name>             Use this name as nzb-filename\n"
 		"       I <priority>         Set priority (signed integer)\n"
+		"       DK <dupekey>         Set duplicate key (string)\n"
+		"       DS <dupescore>       Set duplicate score (signed integer)\n"
+		"       DM (score|all|force) Set duplicate mode\n"
 		"  -C, --connect             Attach client to server\n"
 		"  -L, --list    [F|FR|G|GR|O|H|S] [RegEx] Request list of items from server\n"
 		"                 F          List individual files and server status (default)\n"
@@ -1738,6 +1880,7 @@ void Options::PrintUsage(char* com)
 		"                 GR         Like \"G\" but apply regular expression filter\n"
 		"                 O          List post-processor-queue\n"
 		"                 H          List history\n"
+		"                 HA         List history, all records (incl. hidden)\n"
 		"                 S          Print only server status\n"
 		"    <RegEx>                 Regular expression (only with options \"FR\", \"GR\")\n"
 		"                            using POSIX Extended Regular Expression Syntax\n"
@@ -1795,6 +1938,7 @@ void Options::PrintUsage(char* com)
 		"       O <name>=<value>     Set post-process parameter\n"
 		"       B                    Mark as bad\n"
 		"       G                    Mark as good\n"
+		"       S                    Mark as success\n"
 		"    <IDs>                   Comma-separated list of file- or group- ids or\n"
 		"                            ranges of file-ids, e. g.: 1-5,3,10-22\n"
 		"    <Names>                 List of names (with options \"FN\" and \"GN\"),\n"
@@ -1821,7 +1965,7 @@ void Options::InitFileArg(int argc, char* argv[])
 			}
 			else
 			{
-				abort("FATAL ERROR: Nzb-file not specified\n");
+				abort("FATAL ERROR: Nzb-file or Url not specified\n");
 			}
 		}
 	}
@@ -1847,7 +1991,7 @@ void Options::InitFileArg(int argc, char* argv[])
 #ifdef WIN32
 			m_szArgFilename = strdup(szFileName);
 #else
-		if (szFileName[0] == '/')
+		if (szFileName[0] == '/' || !strncasecmp(szFileName, "http://", 6) || !strncasecmp(szFileName, "https://", 7))
 		{
 			m_szArgFilename = strdup(szFileName);
 		}
@@ -1865,7 +2009,6 @@ void Options::InitFileArg(int argc, char* argv[])
 		if (m_bServerMode || m_bRemoteClientMode ||
 		        !(m_eClientOperation == opClientNoOperation ||
 		          m_eClientOperation == opClientRequestDownload ||
-		          m_eClientOperation == opClientRequestDownloadUrl ||
 				  m_eClientOperation == opClientRequestWriteLog))
 		{
 			abort("FATAL ERROR: Too many arguments\n");
@@ -2045,8 +2188,11 @@ void Options::InitServers()
 		sprintf(optname, "Server%i.Connections", n);
 		const char* nconnections = GetOption(optname);
 
+		sprintf(optname, "Server%i.Retention", n);
+		const char* nretention = GetOption(optname);
+
 		bool definition = nactive || nname || nlevel || ngroup || nhost || nport ||
-			nusername || npassword || nconnections || njoingroup || ntls || ncipher;
+			nusername || npassword || nconnections || njoingroup || ntls || ncipher || nretention;
 		bool completed = nhost && nport && nconnections;
 
 		if (!definition)
@@ -2057,10 +2203,14 @@ void Options::InitServers()
 		if (completed)
 		{
 			NewsServer* pNewsServer = new NewsServer(n, bActive, nname,
-				nhost, atoi(nport), nusername, npassword,
-				bJoinGroup, bTLS, ncipher, atoi((char*)nconnections),
-				nlevel ? atoi((char*)nlevel) : 0,
-				ngroup ? atoi((char*)ngroup) : 0);
+				nhost,
+				nport ? atoi(nport) : 119,
+				nusername, npassword,
+				bJoinGroup, bTLS, ncipher,
+				nconnections ? atoi(nconnections) : 1,
+				nretention ? atoi(nretention) : 0,
+				nlevel ? atoi(nlevel) : 0,
+				ngroup ? atoi(ngroup) : 0);
 			g_pServerPool->AddServer(pNewsServer);
 		}
 		else
@@ -2072,6 +2222,7 @@ void Options::InitServers()
 	}
 
 	g_pServerPool->SetTimeout(GetArticleTimeout());
+	g_pServerPool->SetRetryInterval(GetRetryInterval());
 }
 
 void Options::InitCategories()
@@ -2566,12 +2717,7 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 		// it's predefined option, OK
 		return true;
 	}
-#ifdef ANDROID
-	if (!strncasecmp(optname, "versioncode", 11))
-	{
-		return true;
-	}
-#endif
+
 	if (!strncasecmp(optname, "server", 6))
 	{
 		char* p = (char*)optname + 6;
@@ -2582,7 +2728,8 @@ bool Options::ValidateOptionName(const char* optname, const char* optvalue)
 			!strcasecmp(p, ".port") || !strcasecmp(p, ".username") ||
 			!strcasecmp(p, ".password") || !strcasecmp(p, ".joingroup") ||
 			!strcasecmp(p, ".encryption") || !strcasecmp(p, ".connections") ||
-			!strcasecmp(p, ".cipher") || !strcasecmp(p, ".group")))
+			!strcasecmp(p, ".cipher") || !strcasecmp(p, ".group") ||
+			!strcasecmp(p, ".retention")))
 		{
 			return true;
 		}
@@ -2735,6 +2882,11 @@ void Options::ConvertOldOption(char *szOption, int iOptionBufLen, char *szValue,
 		strncpy(szOption, "ArticleTimeout", iOptionBufLen);
 	}
 
+	if (!strcasecmp(szOption, "CreateBrokenLog"))
+	{
+		strncpy(szOption, "BrokenLog", iOptionBufLen);
+	}
+
 	szOption[iOptionBufLen-1] = '\0';
 	szOption[iValueBufLen-1] = '\0';
 }
@@ -2811,6 +2963,11 @@ void Options::CheckOptions()
 		ConfigError("Options \"ArticleCache\" and \"ParBuffer\" in total cannot use more than 1900MB of memory in 32-Bit mode. Changed to 1500 and 400");
 		m_iArticleCache = 1900;
 		m_iParBuffer = 400;
+	}
+
+	if (!Util::EmptyStr(m_szUnpackPassFile) && !Util::FileExists(m_szUnpackPassFile))
+	{
+		ConfigError("Invalid value for option \"UnpackPassFile\": %s. File not found", m_szUnpackPassFile);
 	}
 }
 

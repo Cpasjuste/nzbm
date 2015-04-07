@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1139 $
- * $Date: 2014-10-09 23:11:42 +0200 (Thu, 09 Oct 2014) $
+ * $Revision: 1221 $
+ * $Date: 2015-02-26 21:57:38 +0100 (jeu. 26 févr. 2015) $
  *
  */
 
@@ -72,7 +72,7 @@ void ParCoordinator::PostParChecker::PrintMessage(Message::EKind eKind, const ch
 	va_end(args);
 	szText[1024-1] = '\0';
 
-	m_pOwner->PrintMessage(m_pPostInfo, eKind, "%s", szText);
+	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
 }
 
 void ParCoordinator::PostParChecker::RegisterParredFile(const char* szFilename)
@@ -160,7 +160,7 @@ void ParCoordinator::PostParRenamer::PrintMessage(Message::EKind eKind, const ch
 	va_end(args);
 	szText[1024-1] = '\0';
 	
-	m_pOwner->PrintMessage(m_pPostInfo, eKind, "%s", szText);
+	m_pPostInfo->GetNZBInfo()->AddMessage(eKind, szText);
 }
 
 void ParCoordinator::PostParRenamer::RegisterParredFile(const char* szFilename)
@@ -441,6 +441,7 @@ void ParCoordinator::ParCheckCompleted()
 		pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
 	{
 		pPostInfo->GetNZBInfo()->SetParStatus(NZBInfo::psSuccess);
+		pPostInfo->SetParRepaired(m_ParChecker.GetStatus() == ParChecker::psRepaired);
 	}
 	else if (m_ParChecker.GetStatus() == ParChecker::psRepairPossible &&
 		pPostInfo->GetNZBInfo()->GetParStatus() != NZBInfo::psFailure)
@@ -457,7 +458,7 @@ void ParCoordinator::ParCheckCompleted()
 	int iParSec = (int)(time(NULL) - m_ParChecker.GetParTime()) - iWaitTime;
 	pPostInfo->GetNZBInfo()->SetParSec(pPostInfo->GetNZBInfo()->GetParSec() + iParSec);
 
-	pPostInfo->GetNZBInfo()->SetParFull(!m_ParChecker.GetParQuick());
+	pPostInfo->GetNZBInfo()->SetParFull(m_ParChecker.GetParFull());
 
 	pPostInfo->SetWorking(false);
 	pPostInfo->SetStage(PostInfo::ptQueued);
@@ -578,7 +579,7 @@ void ParCoordinator::FindPars(DownloadQueue* pDownloadQueue, NZBInfo* pNZBInfo, 
 	if (!ParseParFilename(szBaseParFilename, &iMainBaseLen, NULL))
 	{
 		// should not happen
-        error("Internal error: could not parse filename %s", szBaseParFilename);
+        pNZBInfo->PrintMessage(Message::mkError, "Internal error: could not parse filename %s", szBaseParFilename);
 		return;
 	}
 	int maxlen = iMainBaseLen < 1024 ? iMainBaseLen : 1024 - 1;
@@ -758,7 +759,7 @@ void ParCoordinator::ParRenameCompleted()
 
 	if (m_ParRenamer.HasMissedFiles() && pPostInfo->GetNZBInfo()->GetParStatus() <= NZBInfo::psSkipped)
 	{
-		PrintMessage(pPostInfo, Message::mkInfo, "Requesting par-check/repair for %s to restore missing files ", m_ParRenamer.GetInfoName());
+		m_ParRenamer.PrintMessage(Message::mkInfo, "Requesting par-check/repair for %s to restore missing files ", m_ParRenamer.GetInfoName());
 		pPostInfo->SetRequestParCheck(true);
 	}
 
@@ -788,41 +789,6 @@ void ParCoordinator::UpdateParRenameProgress()
 	DownloadQueue::Unlock();
 	
 	CheckPauseState(pPostInfo);
-}
-
-void ParCoordinator::PrintMessage(PostInfo* pPostInfo, Message::EKind eKind, const char* szFormat, ...)
-{
-	char szText[1024];
-	va_list args;
-	va_start(args, szFormat);
-	vsnprintf(szText, 1024, szFormat, args);
-	va_end(args);
-	szText[1024-1] = '\0';
-
-	pPostInfo->AppendMessage(eKind, szText);
-
-	switch (eKind)
-	{
-		case Message::mkDetail:
-			detail("%s", szText);
-			break;
-
-		case Message::mkInfo:
-			info("%s", szText);
-			break;
-
-		case Message::mkWarning:
-			warn("%s", szText);
-			break;
-
-		case Message::mkError:
-			error("%s", szText);
-			break;
-
-		case Message::mkDebug:
-			debug("%s", szText);
-			break;
-	}
 }
 
 #endif

@@ -1,7 +1,7 @@
 /*
  *  This file is part of nzbget
  *
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1150 $
- * $Date: 2014-10-21 22:21:31 +0200 (Tue, 21 Oct 2014) $
+ * $Revision: 1208 $
+ * $Date: 2015-02-14 22:12:42 +0100 (sam. 14 févr. 2015) $
  *
  */
 
@@ -85,12 +85,14 @@ protected:
 	void				ResetEnv();
 	void				PrepareEnvOptions(const char* szStripPrefix);
 	void				PrepareArgs();
+	void				UnregisterRunningScript();
 
 public:
 						ScriptController();
 	virtual				~ScriptController();
 	int					Execute();
 	void				Terminate();
+	void				Resume();
 	void				Detach();
 	static void			TerminateAll();
 

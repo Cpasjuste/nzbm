@@ -17,8 +17,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1086 $
- * $Date: 2014-08-11 00:14:03 +0200 (Mon, 11 Aug 2014) $
+ * $Revision: 1183 $
+ * $Date: 2014-12-21 20:28:38 +0100 (dim. 21 déc. 2014) $
  *
  */
 
@@ -521,7 +521,7 @@ bool FeedFilter::Term::ParseNumericParam(const char* szParam)
 	m_bFloat = strchr(szParam, '.');
 	
 	const char* p;
-	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.') ; p++) ;
+	for (p = szParam; *p && ((*p >= '0' && *p <='9') || *p == '.' || *p == '-') ; p++) ;
 	if (*p)
 	{
 		return false;

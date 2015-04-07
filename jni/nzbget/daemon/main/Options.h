@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2014 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 1148 $
- * $Date: 2014-10-20 23:17:54 +0200 (Mon, 20 Oct 2014) $
+ * $Revision: 1242 $
+ * $Date: 2015-03-24 18:18:22 +0100 (mar. 24 mars 2015) $
  *
  */
 
@@ -62,7 +62,7 @@ public:
 		opClientRequestScanPause,
 		opClientRequestScanUnpause,
 		opClientRequestHistory,
-		opClientRequestDownloadUrl
+		opClientRequestHistoryAll
 	};
 	enum EWriteLog
 	{
@@ -132,6 +132,7 @@ public:
 		const char*		GetValue() { return m_szValue; }
 		const char*		GetDefValue() { return m_szDefValue; }
 		int				GetLineNo() { return m_iLineNo; }
+		bool			Restricted();
 	};
 	
 	typedef std::vector<OptEntry*>  OptEntriesBase;
@@ -248,6 +249,7 @@ private:
 	// Options
 	bool				m_bConfigErrors;
 	int					m_iConfigLine;
+	char*				m_szAppDir;
 	char*				m_szConfigFilename;
 	char*				m_szDestDir;
 	char*				m_szInterDir;
@@ -263,7 +265,8 @@ private:
 	EMessageTarget		m_eDebugTarget;
 	EMessageTarget		m_eDetailTarget;
 	bool				m_bDecode;
-	bool				m_bCreateBrokenLog;
+	bool				m_bBrokenLog;
+	bool				m_bNzbLog;
 	int					m_iArticleTimeout;
 	int					m_iUrlTimeout;
 	int					m_iTerminateTimeout;
@@ -276,6 +279,10 @@ private:
 	char*				m_szControlIP;
 	char*				m_szControlUsername;
 	char*				m_szControlPassword;
+	char*				m_szRestrictedUsername;
+	char*				m_szRestrictedPassword;
+	char*				m_szAddUsername;
+	char*				m_szAddPassword;
 	int					m_iControlPort;
 	bool				m_bSecureControl;
 	int					m_iSecurePort;
@@ -329,6 +336,7 @@ private:
 	bool				m_bUnpackCleanupDisk;
 	char*				m_szUnrarCmd;
 	char*				m_szSevenZipCmd;
+	char*				m_szUnpackPassFile;
 	bool				m_bUnpackPauseQueue;
 	char*				m_szExtCleanupDisk;
 	char*				m_szParIgnoreExt;
@@ -358,10 +366,15 @@ private:
 	char*				m_szLastArg;
 	bool				m_bPrintOptions;
 	bool				m_bAddTop;
+	char*				m_szAddDupeKey;
+	int					m_iAddDupeScore;
+	int					m_iAddDupeMode;
 	int					m_iSetRate;
 	int					m_iLogLines;
 	int					m_iWriteLogKind;
 	bool				m_bTestBacktrace;
+	bool				m_bWebGet;
+	char*				m_szWebGetFilename;
 
 	// Current state
 	bool				m_bPauseDownload;
@@ -413,8 +426,9 @@ private:
 	void				LoadScripts(Scripts* pScripts);
 
 public:
-						Options(int argc, char* argv[]);
+						Options();
 						~Options();
+	void				Init(int argc, char* argv[]);
 
 	bool				LoadConfig(OptEntries* pOptEntries);
 	bool				SaveConfig(OptEntries* pOptEntries);
@@ -426,6 +440,7 @@ public:
 	OptEntries*			LockOptEntries();
 	void				UnlockOptEntries();
 	const char*			GetConfigFilename() { return m_szConfigFilename; }
+	const char*			GetAppDir() { return m_szAppDir; }
 	const char*			GetDestDir() { return m_szDestDir; }
 	const char*			GetInterDir() { return m_szInterDir; }
 	const char*			GetTempDir() { return m_szTempDir; }
@@ -434,7 +449,8 @@ public:
 	const char*			GetWebDir() { return m_szWebDir; }
 	const char*			GetConfigTemplate() { return m_szConfigTemplate; }
 	const char*			GetScriptDir() { return m_szScriptDir; }
-	bool				GetCreateBrokenLog() const { return m_bCreateBrokenLog; }
+	bool				GetBrokenLog() const { return m_bBrokenLog; }
+	bool				GetNzbLog() const { return m_bNzbLog; }
 	EMessageTarget		GetInfoTarget() const { return m_eInfoTarget; }
 	EMessageTarget		GetWarningTarget() const { return m_eWarningTarget; }
 	EMessageTarget		GetErrorTarget() const { return m_eErrorTarget; }
@@ -453,6 +469,10 @@ public:
 	const char*			GetControlIP();
 	const char*			GetControlUsername() { return m_szControlUsername; }
 	const char*			GetControlPassword() { return m_szControlPassword; }
+	const char*			GetRestrictedUsername() { return m_szRestrictedUsername; }
+	const char*			GetRestrictedPassword() { return m_szRestrictedPassword; }
+	const char*			GetAddUsername() { return m_szAddUsername; }
+	const char*			GetAddPassword() { return m_szAddPassword; }
 	int					GetControlPort() { return m_iControlPort; }
 	bool				GetSecureControl() { return m_bSecureControl; }
 	int					GetSecurePort() { return m_iSecurePort; }
@@ -505,6 +525,7 @@ public:
 	bool				GetUnpackCleanupDisk() { return m_bUnpackCleanupDisk; }
 	const char*			GetUnrarCmd() { return m_szUnrarCmd; }
 	const char*			GetSevenZipCmd() { return m_szSevenZipCmd; }
+	const char*			GetUnpackPassFile() { return m_szUnpackPassFile; }
 	bool				GetUnpackPauseQueue() { return m_bUnpackPauseQueue; }
 	const char*			GetExtCleanupDisk() { return m_szExtCleanupDisk; }
 	const char*			GetParIgnoreExt() { return m_szParIgnoreExt; }
@@ -515,6 +536,7 @@ public:
 	int					GetArticleCache() { return m_iArticleCache; }
 	int					GetEventInterval() { return m_iEventInterval; }
 
+	Categories*			GetCategories() { return &m_Categories; }
 	Category*			FindCategory(const char* szName, bool bSearchAliases) { return m_Categories.FindCategory(szName, bSearchAliases); }
 
 	// Parsed command-line parameters
@@ -536,10 +558,15 @@ public:
 	int					GetAddPriority() { return m_iAddPriority; }
 	char*				GetAddNZBFilename() { return m_szAddNZBFilename; }
 	bool				GetAddTop() { return m_bAddTop; }
+	const char*			GetAddDupeKey() { return m_szAddDupeKey; }
+	int					GetAddDupeScore() { return m_iAddDupeScore; }
+	int					GetAddDupeMode() { return m_iAddDupeMode; }
 	int					GetSetRate() { return m_iSetRate; }
 	int					GetLogLines() { return m_iLogLines; }
 	int					GetWriteLogKind() { return m_iWriteLogKind; }
 	bool				GetTestBacktrace() { return m_bTestBacktrace; }
+	bool				GetWebGet() { return m_bWebGet; }
+	const char*			GetWebGetFilename() { return m_szWebGetFilename; }
 
 	// Current state
 	void				SetPauseDownload(bool bPauseDownload) { m_bPauseDownload = bPauseDownload; }

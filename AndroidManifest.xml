@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.greatlittleapps.nzbm"
-    android:versionCode="142"
-    android:versionName="14.2" android:installLocation="auto">
+    android:versionCode="12531"
+    android:versionName="15.1" android:installLocation="auto">
 
     <uses-sdk
         android:minSdkVersion="9"

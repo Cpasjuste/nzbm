@@ -2,7 +2,7 @@
  *  This file is part of nzbget
  *
  *  Copyright (C) 2004 Sven Henkel <sidddy@users.sourceforge.net>
- *  Copyright (C) 2007-2010 Andrey Prygunkov <hugbug@users.sourceforge.net>
+ *  Copyright (C) 2007-2015 Andrey Prygunkov <hugbug@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * $Revision: 956 $
- * $Date: 2014-02-24 23:11:14 +0100 (Mon, 24 Feb 2014) $
+ * $Revision: 1189 $
+ * $Date: 2015-01-22 21:57:39 +0100 (jeu. 22 janv. 2015) $
  *
  */
 
@@ -214,6 +214,13 @@ void Thread::Stop()
 
 	m_bStopped = true;
 } 
+
+void Thread::Resume()
+{
+	debug("Resuming Thread");
+
+	m_bStopped = false;
+}
 
 bool Thread::Kill()
 {

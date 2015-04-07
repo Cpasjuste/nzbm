@@ -122,8 +122,8 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(scriptsdir)" \
-	"$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" \
-	"$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"
+	"$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" \
+	"$(DESTDIR)$(webuidir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am__nzbget_SOURCES_DIST = daemon/connect/Connection.cpp \
@@ -249,8 +249,7 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 nobase_dist_scriptsSCRIPT_INSTALL = $(install_sh_SCRIPT)
-sbinSCRIPT_INSTALL = $(INSTALL_SCRIPT)
-SCRIPTS = $(nobase_dist_scripts_SCRIPTS) $(sbin_SCRIPTS)
+SCRIPTS = $(nobase_dist_scripts_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -453,7 +452,6 @@ AM_CPPFLAGS = \
 
 EXTRA_DIST = \
 	Makefile.cvs \
-	nzbgetd \
 	$(windows_FILES) \
 	$(osx_FILES)
 
@@ -461,9 +459,23 @@ windows_FILES = \
 	daemon/windows/NTService.cpp \
 	daemon/windows/NTService.h \
 	daemon/windows/win32.h \
+	daemon/windows/WinConsole.cpp \
+	daemon/windows/WinConsole.h \
 	nzbget.sln \
 	nzbget.vcproj \
-	nzbget-shell.bat
+	windows/nzbget-command-shell.bat  \
+	windows/install-update.bat  \
+	windows/README-WINDOWS.txt  \
+	windows/package-info.json  \
+	windows/resources/mainicon.ico \
+	windows/resources/nzbget.rc \
+	windows/resources/resource.h \
+	windows/resources/trayicon_idle.ico \
+	windows/resources/trayicon_paused.ico \
+	windows/resources/trayicon_working.ico \
+	windows/setup/nzbget-setup.nsi \
+	windows/setup/install.bmp \
+	windows/setup/uninstall.bmp
 
 osx_FILES = \
 	osx/App_Prefix.pch \
@@ -489,8 +501,6 @@ osx_FILES = \
 	osx/Resources/Images/mainicon.icns \
 	osx/Resources/Images/statusicon.png \
 	osx/Resources/Images/statusicon@2x.png \
-	osx/Resources/Images/statusicon-inv.png \
-	osx/Resources/Images/statusicon-inv@2x.png \
 	osx/Resources/licenses/license-bootstrap.txt \
 	osx/Resources/licenses/license-jquery-GPL.txt \
 	osx/Resources/licenses/license-jquery-MIT.txt \
@@ -546,7 +556,6 @@ scripts_FILES = \
 
 
 # Install
-sbin_SCRIPTS = nzbgetd
 dist_doc_DATA = $(doc_FILES)
 exampleconfdir = $(datadir)/nzbget
 dist_exampleconf_DATA = $(exampleconf_FILES)
@@ -665,25 +674,6 @@ uninstall-nobase_dist_scriptsSCRIPTS:
 	  f=`echo "$$p" | sed 's|[^/]*$$||'`"$$f"; \
 	  echo " rm -f '$(DESTDIR)$(scriptsdir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(scriptsdir)/$$f"; \
-	done
-install-sbinSCRIPTS: $(sbin_SCRIPTS)
-	@$(NORMAL_INSTALL)
-	test -z "$(sbindir)" || $(mkdir_p) "$(DESTDIR)$(sbindir)"
-	@list='$(sbin_SCRIPTS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  if test -f $$d$$p; then \
-	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-	    echo " $(sbinSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(sbindir)/$$f'"; \
-	    $(sbinSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(sbindir)/$$f"; \
-	  else :; fi; \
-	done
-
-uninstall-sbinSCRIPTS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(sbin_SCRIPTS)'; for p in $$list; do \
-	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
-	  echo " rm -f '$(DESTDIR)$(sbindir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(sbindir)/$$f"; \
 	done
 
 mostlyclean-compile:
@@ -1848,7 +1838,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib
+	$(mkdir_p) $(distdir)/daemon/windows $(distdir)/lib/par2 $(distdir)/osx $(distdir)/osx/NZBGet.xcodeproj $(distdir)/osx/Resources $(distdir)/osx/Resources/Images $(distdir)/osx/Resources/licenses $(distdir)/scripts $(distdir)/webui $(distdir)/webui/img $(distdir)/webui/lib $(distdir)/windows $(distdir)/windows/resources $(distdir)/windows/setup
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -1979,7 +1969,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA) config.h
 installdirs:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(exampleconfdir)" "$(DESTDIR)$(webuidir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -2033,9 +2023,7 @@ install-data-am: install-dist_docDATA install-dist_exampleconfDATA \
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
-install-exec-am: install-binPROGRAMS install-sbinSCRIPTS
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
+install-exec-am: install-binPROGRAMS
 
 install-info: install-info-am
 
@@ -2065,7 +2053,7 @@ ps-am:
 uninstall-am: uninstall-binPROGRAMS uninstall-dist_docDATA \
 	uninstall-dist_exampleconfDATA uninstall-info-am \
 	uninstall-nobase_dist_scriptsSCRIPTS \
-	uninstall-nobase_dist_webuiDATA uninstall-sbinSCRIPTS
+	uninstall-nobase_dist_webuiDATA
 
 .PHONY: CTAGS GTAGS all all-am am--refresh check check-am clean \
 	clean-binPROGRAMS clean-generic ctags dist dist-all dist-bzip2 \
@@ -2076,16 +2064,16 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dist_docDATA \
 	install-binPROGRAMS install-data install-data-am \
 	install-data-hook install-dist_docDATA \
 	install-dist_exampleconfDATA install-exec install-exec-am \
-	install-exec-hook install-info install-info-am install-man \
+	install-info install-info-am install-man \
 	install-nobase_dist_scriptsSCRIPTS \
-	install-nobase_dist_webuiDATA install-sbinSCRIPTS \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-dist_docDATA uninstall-dist_exampleconfDATA \
-	uninstall-info-am uninstall-nobase_dist_scriptsSCRIPTS \
-	uninstall-nobase_dist_webuiDATA uninstall-sbinSCRIPTS
+	install-nobase_dist_webuiDATA install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-dist_docDATA \
+	uninstall-dist_exampleconfDATA uninstall-info-am \
+	uninstall-nobase_dist_scriptsSCRIPTS \
+	uninstall-nobase_dist_webuiDATA
 
 
 # Note about "sed": 
@@ -2096,13 +2084,6 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dist_docDATA \
 # 2) sed < original.temp > original
 # 3) delete original.temp
 # These steps ensure that the output file has the same permissions as the original file.
-
-# Configure installed script
-install-exec-hook:
-	rm -f "$(DESTDIR)$(sbindir)/nzbgetd.temp"
-	cp "$(DESTDIR)$(sbindir)/nzbgetd" "$(DESTDIR)$(sbindir)/nzbgetd.temp"
-	sed 's?/usr/local/bin?$(bindir)?' < "$(DESTDIR)$(sbindir)/nzbgetd.temp" > "$(DESTDIR)$(sbindir)/nzbgetd"
-	rm "$(DESTDIR)$(sbindir)/nzbgetd.temp"
 
 # Prepare example configuration file
 install-data-hook:
