@@ -100,7 +100,7 @@ LOCAL_SRC_FILES := android/Android.cpp \
 		 
 LOCAL_LDLIBS := -llog -lz
 
-LOCAL_STATIC_LIBRARIES := libssl_static libcrypto_static sigc xml2
+LOCAL_STATIC_LIBRARIES := libssl_static libcrypto_static xml2
 #unrar
 
 LOCAL_CFLAGS += -O3 -DHAVE_CONFIG_H -DANDROID \
@@ -117,7 +117,6 @@ LOCAL_CFLAGS += -O3 -DHAVE_CONFIG_H -DANDROID \
 		-I$(LOCAL_PATH)/lib/par2 \
 		-I$(LOCAL_PATH)/../ \
 		-I$(LOCAL_PATH)/../openssl/include \
-		-I$(LOCAL_PATH)/../libsigc++-2.2.10 \
 		-I$(LOCAL_PATH)/../libxml2/include
 #		-I$(LOCAL_PATH)/../unrar-4.1.3
 #-DDEBUG \
