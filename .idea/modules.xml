@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/autility/autility.iml" filepath="$PROJECT_DIR$/autility/autility.iml" />
+      <module fileurl="file://$PROJECT_DIR$/nzbgetrpc/nzbgetrpc.iml" filepath="$PROJECT_DIR$/nzbgetrpc/nzbgetrpc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/nzbm.iml" filepath="$PROJECT_DIR$/nzbm.iml" />
+    </modules>
+  </component>
+</project>

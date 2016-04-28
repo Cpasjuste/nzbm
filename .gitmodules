@@ -1,0 +1,6 @@
+[submodule "autility"]
+	path = autility
+	url = ssh://git@git.mydedibox.fr:225/cpasjuste/autility.git
+[submodule "nzbgetrpc"]
+	path = nzbgetrpc
+	url = ssh://git@git.mydedibox.fr:225/NzbGetMobile/nzbgetrpc.git
