@@ -5,325 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9ee05f8e-8cdb-4a66-987f-de328c03038d" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/app/src/main/jni/nzbget" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/autility/autility.iml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/nzbgetrpc/nzbgetrpc.iml" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/.travis.yml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/Android.mk" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/COPYING" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/ChangeLog" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/Makefile.am" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/Makefile.in" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/README" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/README.md" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/aclocal.m4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/android/Android.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/android/Android.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/android/config.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/config.h.in" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/configure" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/configure.ac" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/connect/Connection.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/connect/Connection.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/connect/TlsSocket.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/connect/TlsSocket.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/connect/WebDownloader.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/connect/WebDownloader.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/FeedScript.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/FeedScript.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/NzbScript.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/NzbScript.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/PostScript.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/PostScript.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/QueueScript.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/QueueScript.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/ScanScript.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/ScanScript.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/SchedulerScript.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/SchedulerScript.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/ScriptConfig.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/extension/ScriptConfig.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/feed/FeedCoordinator.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/feed/FeedCoordinator.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/feed/FeedFile.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/feed/FeedFile.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/feed/FeedFilter.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/feed/FeedFilter.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/feed/FeedInfo.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/feed/FeedInfo.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/frontend/ColoredFrontend.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/frontend/ColoredFrontend.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/frontend/Frontend.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/frontend/Frontend.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/frontend/LoggableFrontend.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/frontend/LoggableFrontend.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/frontend/NCursesFrontend.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/frontend/NCursesFrontend.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/CommandLineParser.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/CommandLineParser.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/DiskService.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/DiskService.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/Maintenance.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/Maintenance.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/Options.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/Options.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/Scheduler.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/Scheduler.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/StackTrace.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/StackTrace.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/nzbget.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/main/nzbget.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/ArticleDownloader.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/ArticleDownloader.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/ArticleWriter.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/ArticleWriter.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/Decoder.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/Decoder.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/NewsServer.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/NewsServer.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/NntpConnection.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/NntpConnection.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/ServerPool.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/ServerPool.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/StatMeter.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/nntp/StatMeter.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/Cleanup.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/Cleanup.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/DupeMatcher.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/DupeMatcher.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/ParChecker.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/ParChecker.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/ParCoordinator.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/ParCoordinator.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/ParParser.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/ParParser.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/ParRenamer.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/ParRenamer.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/PrePostProcessor.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/PrePostProcessor.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/Unpack.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/postprocess/Unpack.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/DiskState.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/DiskState.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/DownloadInfo.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/DownloadInfo.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/DupeCoordinator.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/DupeCoordinator.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/HistoryCoordinator.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/HistoryCoordinator.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/NzbFile.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/NzbFile.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/QueueCoordinator.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/QueueCoordinator.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/QueueEditor.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/QueueEditor.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/Scanner.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/Scanner.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/UrlCoordinator.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/queue/UrlCoordinator.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/BinRpc.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/BinRpc.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/MessageBase.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/RemoteClient.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/RemoteClient.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/RemoteServer.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/RemoteServer.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/WebServer.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/WebServer.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/XmlRpc.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/remote/XmlRpc.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Container.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/FileSystem.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/FileSystem.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Log.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Log.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/NString.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/NString.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Observer.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Observer.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Script.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Script.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Service.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Service.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Thread.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Thread.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Util.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/util/Util.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/windows/StdAfx.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/windows/WinConsole.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/windows/WinConsole.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/windows/WinService.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/daemon/windows/WinService.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/catch/catch.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/AUTHORS" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/README" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/commandline.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/commandline.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/crc.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/crc.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/creatorpacket.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/creatorpacket.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/criticalpacket.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/criticalpacket.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/datablock.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/datablock.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/descriptionpacket.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/descriptionpacket.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/diskfile.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/diskfile.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/filechecksummer.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/filechecksummer.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/galois.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/galois.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/letype.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/mainpacket.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/mainpacket.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/md5.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/md5.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/par2cmdline.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/par2creatorsourcefile.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/par2creatorsourcefile.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/par2fileformat.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/par2fileformat.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/par2repairer.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/par2repairer.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/par2repairersourcefile.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/par2repairersourcefile.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/parheaders.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/parheaders.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/recoverypacket.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/recoverypacket.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/reedsolomon.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/reedsolomon.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/verificationhashtable.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/verificationhashtable.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/verificationpacket.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/lib/par2/verificationpacket.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/linux/build-info.txt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/linux/build-nzbget" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/linux/build-toolchain-freebsd" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/linux/build-unpack" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/linux/install-update.sh" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/linux/installer.sh" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/linux/package-info.json" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/nzbget.conf" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/nzbget.vcxproj" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/App_Prefix.pch" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/DaemonController.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/DaemonController.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/MainApp.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/MainApp.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/MainApp.xib" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/NZBGet-Info.plist" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/NZBGet.xcodeproj/project.pbxproj" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/PFMoveApplication.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/PFMoveApplication.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/PreferencesDialog.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/PreferencesDialog.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/PreferencesDialog.xib" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/RPC.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/RPC.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/Resources/Credits.rtf" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/Resources/Images/mainicon.icns" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/Resources/Images/statusicon.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/Resources/Images/statusicon@2x.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/Resources/Localizable.strings" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/Resources/Welcome.rtf" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/Resources/licenses/license-bootstrap.txt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/Resources/licenses/license-jquery-GPL.txt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/Resources/licenses/license-jquery-MIT.txt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/WebClient.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/WebClient.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/WelcomeDialog.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/WelcomeDialog.m" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/osx/WelcomeDialog.xib" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/posix/ax_cxx_compile_stdcxx.m4" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/posix/config.guess" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/posix/config.sub" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/posix/depcomp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/posix/install-sh" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/posix/missing" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/pubkey.pem" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/scripts/EMail.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/scripts/Logger.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/feed/FeedFilterTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/main/CommandLineParserTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/main/OptionsTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/nntp/ServerPoolTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/postprocess/DupeMatcherTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/postprocess/ParCheckerTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/postprocess/ParRenamerTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/queue/NzbFileTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/suite/TestMain.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/suite/TestMain.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/suite/TestUtil.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/suite/TestUtil.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/dupematcher1/testfile.part01.rar" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/dupematcher1/testfile.part24.rar" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/dupematcher2/testfile.part04.rar" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/dupematcher2/testfile.part43.rar" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/nzbfile/dotless.nzb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/nzbfile/dotless.txt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/nzbfile/plain.nzb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/nzbfile/plain.txt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/parchecker/crc.txt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/parchecker/testfile.dat" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/parchecker/testfile.nfo" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/parchecker/testfile.par2" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/parchecker/testfile.vol00+1.PAR2" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/parchecker/testfile.vol01+2.PAR2" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/testdata/parchecker/testfile.vol03+3.PAR2" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/util/FileSystemTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/util/NStringTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/tests/util/UtilTest.cpp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/config.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/downloads.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/edit.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/fasttable.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/feed.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/history.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/img/download-anim-green-2x.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/img/download-anim-orange-2x.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/img/favicon.ico" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/img/icons-2x.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/img/icons.png" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/img/transmit-file.gif" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/img/transmit-reload-2x.gif" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/img/transmit.gif" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/index.html" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/index.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/lib/bootstrap.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/lib/bootstrap.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/lib/bootstrap.min.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/lib/elycharts.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/lib/elycharts.min.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/lib/jquery.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/lib/jquery.min.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/lib/raphael.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/lib/raphael.min.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/messages.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/status.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/style.css" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/upload.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/webui/util.js" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/README-WINDOWS.txt" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/install-update.bat" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/nzbget-command-shell.bat" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/package-info.json" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/resources/mainicon.ico" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/resources/nzbget.rc" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/resources/resource.h" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/resources/trayicon_idle.ico" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/resources/trayicon_paused.ico" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/resources/trayicon_working.ico" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/setup/install.bmp" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/setup/nzbget-setup.nsi" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/jni/nzbget/windows/setup/uninstall.bmp" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/autility" afterPath="$PROJECT_DIR$/autility" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/nzbgetrpc" afterPath="$PROJECT_DIR$/nzbgetrpc" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitmodules" afterPath="$PROJECT_DIR$/.gitmodules" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/jni/Android.mk" afterPath="$PROJECT_DIR$/app/src/main/jni/Android.mk" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/jni/android/Android.h" afterPath="$PROJECT_DIR$/app/src/main/jni/android/Android.h" />
     </list>
     <ignored path="nzbm.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -356,7 +42,7 @@
       <file leaf-file-name="build-binary.mk" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../sdk/sdk/ndk-bundle/build/core/build-binary.mk">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.33076924">
+            <state vertical-scroll-proportion="-4.3">
               <caret line="459" column="0" selection-start-line="459" selection-start-column="0" selection-end-line="459" selection-end-column="0" />
               <folding />
             </state>
@@ -3396,10 +3082,10 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="66" />
-    <option name="y" value="30" />
-    <option name="width" value="1854" />
-    <option name="height" value="1050" />
+    <option name="x" value="201" />
+    <option name="y" value="194" />
+    <option name="width" value="1286" />
+    <option name="height" value="807" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <OptionsSetting value="true" id="Add" />
@@ -3668,24 +3354,24 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="66" y="30" width="1854" height="1050" extended-state="6" />
+    <frame x="201" y="194" width="1286" height="807" extended-state="0" />
     <editor active="false" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.669673" sideWeight="0.47324416" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.669673" sideWeight="0.4710145" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Build Variants" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Analysis" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32919955" sideWeight="0.50668895" order="-1" side_tool="true" content_ui="tabs" />
-      <window_info id="Android Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.669673" sideWeight="0.458194" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Android Monitor" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.9785832" sideWeight="0.45513865" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32919955" sideWeight="0.49554068" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Captures" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Capture Tool" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
-      <window_info id="Gradle Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.669673" sideWeight="0.54180604" order="-1" side_tool="true" content_ui="tabs" />
+      <window_info id="Gradle Console" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.9785832" sideWeight="0.5448613" order="-1" side_tool="true" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.23634337" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.34584013" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24972129" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Android Model" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
@@ -3758,7 +3444,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../sdk/sdk/ndk-bundle/build/core/build-binary.mk">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.33076924">
+        <state vertical-scroll-proportion="-4.3">
           <caret line="459" column="0" selection-start-line="459" selection-start-column="0" selection-end-line="459" selection-end-column="0" />
           <folding />
         </state>
