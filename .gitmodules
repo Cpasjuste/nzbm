@@ -4,3 +4,6 @@
 [submodule "nzbgetrpc"]
 	path = nzbgetrpc
 	url = ssh://git@git.mydedibox.fr:225/NzbGetMobile/nzbgetrpc.git
+[submodule "app/src/main/jni/nzbget"]
+	path = app/src/main/jni/nzbget
+	url = https://github.com/nzbget/nzbget.git
