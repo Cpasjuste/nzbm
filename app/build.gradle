@@ -23,8 +23,8 @@ android {
     }
     // call regular ndk-build(.cmd) script from app directory
     task ndkBuild(type: Exec) {
-        commandLine "/home/cpasjuste/dev/android/sdk/sdk/ndk-bundle/ndk-build",
-                '-j4', '-C', file('src/main').absolutePath
+        String ndk = "${android.sdkDirectory}/ndk-bundle/ndk-build"
+        commandLine "${ndk}", '-j4', '-C', file('src/main').absolutePath
     }
 
     tasks.withType(JavaCompile) {
