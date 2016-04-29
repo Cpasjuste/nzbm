@@ -1,9 +1,9 @@
-[submodule "autility"]
-	path = autility
-	url = ssh://git@git.mydedibox.fr:225/cpasjuste/autility.git
-[submodule "nzbgetrpc"]
-	path = nzbgetrpc
-	url = ssh://git@git.mydedibox.fr:225/NzbGetMobile/nzbgetrpc.git
 [submodule "app/src/main/jni/nzbget"]
 	path = app/src/main/jni/nzbget
 	url = https://github.com/Cpasjuste/nzbget.git
+[submodule "nzbgetrpc"]
+	path = nzbgetrpc
+	url = https://github.com/Cpasjuste/NZBGetRPC.git
+[submodule "autility"]
+	path = autility
+	url = https://github.com/Cpasjuste/autility.git
