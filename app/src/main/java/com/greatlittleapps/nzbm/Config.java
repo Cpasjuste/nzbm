@@ -124,7 +124,7 @@ public class Config {
         return this.unrarCmd;
     }
 
-    public void setunrarCmd(String path) {
+    public void setUnrarCmd(String path) {
         this.string = this.string.replace("UnrarCmd=" + this.unrarCmd, "UnrarCmd=" + path);
         this.unrarCmd = path;
     }
@@ -139,7 +139,7 @@ public class Config {
     }
 
     public String getLogFile() {
-        return this.unrarCmd;
+        return this.logFile;
     }
 
     public void setLogFile(String path) {
@@ -232,7 +232,7 @@ public class Config {
                 this.setInterDir(paths.download + "/nzbtemp");
                 this.setWebDir(paths.webui);
                 this.setConfigTemplate(paths.webui + "/nzbget.conf");
-                this.setunrarCmd(paths.unrar + "/unrar");
+                this.setUnrarCmd(paths.unrar);
                 this.setOutputmode("loggable");
                 this.setLogFile(paths.nzbget + "/nzbget.log");
                 this.save();

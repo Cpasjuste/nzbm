@@ -14,7 +14,8 @@ public class Paths
 	
 	public Paths(Context ctx)
 	{
-		nzbget = data = unrar = ctx.getFilesDir().getAbsolutePath();
+		nzbget = data = ctx.getFilesDir().getAbsolutePath();
+		unrar = ctx.getApplicationInfo().nativeLibraryDir + "/libunrar.so";
 		download = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download";
 		webui = nzbget + "/webui";
 		config = nzbget + "/nzbget.conf";

@@ -74,7 +74,7 @@ public class MainActivity extends NZBMServiceActivity
             conf = new Config(MainActivity.this);
             startService();
         } else {
-            Utility.log("missing webui directory or unrar binary...");
+            Utility.log("missing webui directory...");
             extractData();
         }
         isStoragePermissionGranted();
@@ -196,13 +196,6 @@ public class MainActivity extends NZBMServiceActivity
                 dialog.hide();
                 if (success) {
                     Utility.log("extract data success");
-                    try {
-                        Utility.log("chmod " + paths.unrar + "/unrar");
-                        chmod(new File(paths.unrar + "/unrar"), 755);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -215,15 +208,8 @@ public class MainActivity extends NZBMServiceActivity
             }
         };
         d.add("webui", paths.webui + "/");
-        d.add("unrar", paths.unrar + "/");
         d.add("nzbgetconf", paths.nzbget + "/");
         d.process();
-    }
-
-    public int chmod(File path, int mode) throws Exception {
-        Class<?> fileUtils = Class.forName("android.os.FileUtils");
-        Method setPermissions = fileUtils.getMethod("setPermissions", String.class, int.class, int.class, int.class);
-        return (Integer) setPermissions.invoke(null, path.getAbsolutePath(), mode, -1, -1);
     }
 
     public boolean isStoragePermissionGranted() {
