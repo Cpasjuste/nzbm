@@ -2,7 +2,7 @@
 #include "Android.h"
 
 /* Define to 1 to include debug-code */
-#define DEBUG 1
+#undef DEBUG
 
 /* Define to 1 to not use curses */
 #define DISABLE_CURSES 1
