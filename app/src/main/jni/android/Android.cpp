@@ -40,7 +40,6 @@ extern "C"
 JNIEXPORT int JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_main( JNIEnv *env, jobject thiz, jobjectArray strArray )
 {
 	int i;
-
 	jsize len = env->GetArrayLength(strArray);
 
 	const char *argv[len];
@@ -50,9 +49,11 @@ JNIEXPORT int JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_main( JNIEnv 
 		argv[i] = env->GetStringUTFChars( str, 0 );
 	}
 
-	int ret = main( i, (char **)argv, (char **)"" );
+    // fix Script.cpp: EnvironmentStrings::InitFromCurrentProcess
+    char **argp = (char**)malloc(sizeof(char*));
 
-	//g_bReloading = true; // TODO ?
+    // run nzbget
+	int ret = main( i, (char **)argv, argp );
 
 	for( i=0; i<len; i++ )
 		env->ReleaseStringUTFChars( (jstring)env->GetObjectArrayElement(strArray,i), argv[i] );

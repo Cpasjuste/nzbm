@@ -100,7 +100,7 @@ public class NzbmService extends Service {
                                 String remaining = status.getRemainingSizeMB() + " MB";
                                 String downloadRate = (status.getDownloadRate() / 1024) + " KB/s";
                                 msg = remaining + " @ " + downloadRate + " (" + remainingTime + ")";
-                                Utility.log(msg);
+                                //Utility.log(msg);
                             }
 
 							mNotifyBuilder.setContentText( msg );

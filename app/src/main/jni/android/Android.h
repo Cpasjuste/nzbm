@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #define VERSION "17.0-testing"
-#define PACKAGE_STRING "1686-15-g788d8d1"
+#define PACKAGE_STRING "1686-16-g8c4d8ce"
 #define PACKAGE_VERSION "17.0"
 
 #ifndef LOG_TAG
