@@ -49,12 +49,13 @@ JNIEXPORT int JNICALL Java_com_greatlittleapps_nzbm_service_Nzbget_main( JNIEnv 
 		argv[i] = env->GetStringUTFChars( str, 0 );
 	}
 
-    // fix Script.cpp: EnvironmentStrings::InitFromCurrentProcess
-    char **argp = (char**)malloc(sizeof(char*));
+	// fix Script.cpp: EnvironmentStrings::InitFromCurrentProcess
+	char **argp = (char**)malloc(sizeof(char*));
 
-    // run nzbget
+	// run nzbget
 	int ret = main( i, (char **)argv, argp );
 
+    free(argp);
 	for( i=0; i<len; i++ )
 		env->ReleaseStringUTFChars( (jstring)env->GetObjectArrayElement(strArray,i), argv[i] );
 

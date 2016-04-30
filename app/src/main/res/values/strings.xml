@@ -1,8 +1,7 @@
 <resources>
     <string name="app_name">nzbm</string>
-
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-
     <string name="action_settings">Settings</string>
+    <string name="banner_ad_unit_id">ca-app-pub-2784493508719021/1799959398</string>
 </resources>

@@ -37,7 +37,13 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.3.0'
     compile 'com.android.support:design:23.3.0'
+    compile 'com.google.android.gms:play-services-ads:8.4.0'
     compile project(':autility')
     compile project(':nzbgetrpc')
     compile 'com.github.delight-im:Android-AdvancedWebView:v2.1.0'
+    compile('com.nononsenseapps:filepicker:2.5.0') {
+        exclude module: 'support-v4'
+        exclude module: 'appcompat-v7'
+        exclude module: 'recyclerview-v7'
+    }
 }
