@@ -7,3 +7,6 @@
 [submodule "app/src/main/jni/nzbget"]
 	path = app/src/main/jni/nzbget
 	url = https://github.com/nzbget/nzbget.git
+[submodule "app/src/main/jni/openssl"]
+	path = app/src/main/jni/openssl
+	url = https://github.com/emileb/OpenSSL-for-Android-Prebuilt.git

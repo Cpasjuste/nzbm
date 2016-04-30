@@ -264,5 +264,3 @@ public class NzbmService extends Service {
         }
     }
 }
-
-
