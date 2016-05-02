@@ -13,14 +13,12 @@ LOCAL_SRC_FILES:= \
 	headers.cpp qopen.cpp
 
 LOCAL_MODULE:= libunrar
-
 LOCAL_C_INCLUDES := $(UNRAR_TOP) $(LOCAL_PATH)
-
 LOCAL_CPPFLAGS := -D_ANDROID_EXE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -UALLOW_EXCEPTIONS
+LOCAL_ARM_MODE := arm
 
 include $(BUILD_EXECUTABLE)
 
 $(NDK_APP_LIBS_OUT)/%/libunrar.so: $(NDK_APP_LIBS_OUT)/%/unrar
 		$(call host-mv, $<, $@)
-
 all: $(foreach _abi,$(APP_ABI),$(NDK_APP_LIBS_OUT)/$(_abi)/libunrar.so)

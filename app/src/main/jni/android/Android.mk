@@ -117,7 +117,7 @@ LOCAL_SRC_FILES := Android.cpp \
 		 
 LOCAL_LDLIBS := -llog -lz
 
-LOCAL_STATIC_LIBRARIES := libopenssl_static libopencrypto_static xml2
+LOCAL_STATIC_LIBRARIES := libopenssl_static libopencrypto_static libxml2
 
 LOCAL_CFLAGS += -DHAVE_PTHREADS
 

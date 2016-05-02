@@ -10,3 +10,6 @@
 [submodule "app/src/main/jni/openssl"]
 	path = app/src/main/jni/openssl
 	url = https://github.com/emileb/OpenSSL-for-Android-Prebuilt.git
+[submodule "app/src/main/jni/libxml2"]
+	path = app/src/main/jni/libxml2
+	url = https://github.com/android/platform_external_libxml2.git
