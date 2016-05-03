@@ -117,7 +117,7 @@ LOCAL_SRC_FILES := Android.cpp \
 		 
 LOCAL_LDLIBS := -llog -lz
 
-LOCAL_STATIC_LIBRARIES := libopenssl_static libopencrypto_static libxml2
+LOCAL_STATIC_LIBRARIES := libssl_static libcrypto_static libxml2
 
 LOCAL_CFLAGS += -DHAVE_PTHREADS
 
@@ -135,7 +135,7 @@ LOCAL_CFLAGS += -O3 -DHAVE_CONFIG_H -DANDROID \
 		-I$(LOCAL_PATH)/$(SRC_PATH)daemon/util \
 		-I$(LOCAL_PATH)/$(SRC_PATH)lib/par2 \
 		-I$(LOCAL_PATH)/$(SRC_PATH)../ \
-		-I$(LOCAL_PATH)/$(SRC_PATH)../openssl/openssl-1.0.2/include \
+		-I$(LOCAL_PATH)/$(SRC_PATH)../BoringSSL/include \
 		-I$(LOCAL_PATH)/$(SRC_PATH)../libxml2/include
 
 include $(BUILD_SHARED_LIBRARY)

@@ -324,6 +324,7 @@ public class MainActivity extends NZBMServiceActivity
         AdRequest adRequest = new AdRequest.Builder()
                 .addTestDevice(AdRequest.DEVICE_ID_EMULATOR)
                 .addTestDevice("50854E428E4AE737283AEFD68B7E36A3")
+                .addTestDevice("B6014D29667B80ED30ECE79BA39F486F")
                 .build();
         adView.loadAd(adRequest);
     }
