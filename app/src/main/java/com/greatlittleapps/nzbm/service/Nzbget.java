@@ -68,7 +68,6 @@ public class Nzbget {
     private native boolean append(String path, String category, boolean addToTop);
 
     static {
-        System.loadLibrary("stlport_shared");
         System.loadLibrary("nzbget");
     }
 }
